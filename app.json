@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "SellkarIndia",
+    "displayName": "SellkarIndia",
+    "slug": "sellkarindia",
+    "version": "0.0.1",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTabletMode": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.sellkarindia"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "platforms": [
+      "android",
+      "ios",
+      "web"
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "129350411784",
+    "project_id": "sellkarindia-e4764",
+    "storage_bucket": "sellkarindia-e4764.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129350411784:android:56c151fa04dcb9653a13bd",
+        "android_client_info": {
+          "package_name": "com.sellkarindia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVjvXLk5T6K-75StUeyJkPaIdFvYa33Y0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
