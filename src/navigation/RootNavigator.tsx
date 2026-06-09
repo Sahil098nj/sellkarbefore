@@ -22,6 +22,10 @@ import AddressPickupScreen from '../screens/AddressPickupScreen';
 import TrackOrderScreen from '../screens/TrackOrderScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import LeadsScreen from '../screens/LeadsScreen';
+import PickupRequestsScreen from '../screens/PickupRequestsScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import AboutUsScreen from '../screens/AboutUsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -58,7 +62,7 @@ const RootNavigator: React.FC = () => {
         options={{ animation: 'none' }}
       />
       <Stack.Screen
-        name="Debug"
+        name={NAVIGATION_ROUTES.DEBUG as keyof RootStackParamList}
         component={DebugScreen}
         options={{ animation: 'none' }}
       />
@@ -125,6 +129,38 @@ const RootNavigator: React.FC = () => {
       <Stack.Screen
         name={'Profile' as keyof RootStackParamList}
         component={ProfileScreen}
+      />
+      <Stack.Screen
+        name={'Leads' as keyof RootStackParamList}
+        component={LeadsScreen}
+        options={{
+          title: 'My Leads',
+        }}
+      />
+      <Stack.Screen
+        name={'PickupRequests' as keyof RootStackParamList}
+        component={PickupRequestsScreen}
+        options={{
+          title: 'Pickup Requests',
+        }}
+      />
+      <Stack.Screen
+        name={'PrivacyPolicy' as keyof RootStackParamList}
+        component={PrivacyPolicyScreen}
+        options={{
+          title: 'Privacy Policy',
+          headerShown: true,
+          headerBackTitle: 'Back',
+        }}
+      />
+      <Stack.Screen
+        name={'AboutUs' as keyof RootStackParamList}
+        component={AboutUsScreen}
+        options={{
+          title: 'About Us',
+          headerShown: true,
+          headerBackTitle: 'Back',
+        }}
       />
     </Stack.Navigator>
   );

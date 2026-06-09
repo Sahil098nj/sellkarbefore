@@ -5,21 +5,21 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../constants';
 import type { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
-import { useModelsQuery, Device } from '../api/productsApi';
-import SkeletonBlock from '../components/SkeletonBlock';
+import { useLiveModelsQuery, Device } from '../api/productsApi';
 
 type ModelVariantScreenRouteProp = RouteProp<RootStackParamList, 'ModelVariant'>;
+type ModelListItem = Device | null;
 
 const ModelVariantScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<ModelVariantScreenRouteProp>();
-  const { brandId, brandName } = route.params;
+  const { brandId, brandName, category } = route.params;
 
   const [search, setSearch] = useState('');
   const [failedImages, setFailedImages] = useState<Record<string, true>>({});
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
 
-  const modelsQuery = useModelsQuery(brandId);
+  const modelsQuery = useLiveModelsQuery(brandId);
   const models: Device[] = modelsQuery.data ?? [];
 
   const filtered = useMemo(() => {
@@ -28,21 +28,29 @@ const ModelVariantScreen: React.FC = () => {
     return models.filter((item) => item.model_name.toLowerCase().includes(q));
   }, [models, search]);
 
+  const listData = useMemo<ModelListItem[]>(() => {
+    if (modelsQuery.isLoading) {
+      return Array.from({ length: 9 }, () => null);
+    }
+    return filtered;
+  }, [modelsQuery.isLoading, filtered]);
+
   const handleSelectModel = useCallback((model: Device) => {
     setSelectedModelId(model.id);
     navigation.navigate('VariantSelection', {
       modelId: model.id,
       modelName: model.model_name,
       brandName,
+      category,
     });
-  }, [brandName, navigation]);
+  }, [brandName, navigation, category]);
 
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={modelsQuery.isLoading ? Array.from({ length: 9 }) : filtered}
-        keyExtractor={(item: { id?: string }, index: number) => {
-          if (item && typeof item === 'object' && 'id' in item && item.id) {
+        data={listData}
+        keyExtractor={(item: ModelListItem, index: number) => {
+          if (item?.id) {
             return item.id;
           }
           return `skeleton-${index}`;
@@ -67,12 +75,12 @@ const ModelVariantScreen: React.FC = () => {
             </View>
           </>
         )}
-        renderItem={({ item }: { item: Device }) => {
-          if (modelsQuery.isLoading) {
+        renderItem={({ item }: { item: ModelListItem }) => {
+          if (!item) {
             return (
               <View style={styles.modelCard}>
-                <SkeletonBlock width="100%" height={72} borderRadius={12} />
-                <SkeletonBlock width="75%" height={12} style={{ marginTop: 10 }} />
+                <View style={styles.modelSkeletonImage} />
+                <View style={styles.modelSkeletonText} />
               </View>
             );
           }
@@ -180,6 +188,20 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 8,
     backgroundColor: '#F1F5F9',
+  },
+  modelSkeletonImage: {
+    width: '100%',
+    height: 72,
+    borderRadius: 12,
+    backgroundColor: '#E2E8F0',
+  },
+  modelSkeletonText: {
+    width: '75%',
+    height: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    backgroundColor: '#E2E8F0',
+    alignSelf: 'center',
   },
   modelImageFallback: {
     width: '100%',

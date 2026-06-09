@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { COLORS, NAVIGATION_ROUTES } from '../constants';
+import { COLORS } from '../constants';
 import type { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
 
 type BasePriceScreenRouteProp = RouteProp<RootStackParamList, 'BasePrice'>;
@@ -18,7 +18,17 @@ const diagnostics = [
 const BasePriceScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<BasePriceScreenRouteProp>();
-  const { variant } = route.params;
+  const { variant, category } = route.params ?? {};
+
+  // For BasePrice, show the variant's base_price (starting point)
+  // The actual laptop_prices calculation happens in ConditionScreen
+  const displayPrice = variant?.base_price || 0;
+  const isLaptop = category === 'laptop';
+
+  // Debug logging
+  if (__DEV__) {
+    console.log('[BasePrice] variant:', variant?.id, 'category:', category, 'base_price:', displayPrice);
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -27,12 +37,15 @@ const BasePriceScreen: React.FC = () => {
         <Text style={styles.subtitle}>We start with the best market value</Text>
 
         <View style={styles.priceCard}>
-          <Text style={styles.priceLabel}>Estimated Price</Text>
-          <Text style={styles.priceValue}>₹ {variant?.base_price?.toLocaleString('en-IN') || '0'}</Text>
-          <Text style={styles.priceNote}>Diagnostics will adjust the final offer.</Text>
+          <Text style={styles.priceLabel}>Starting Price</Text>
+          <Text style={styles.priceValue}>₹ {displayPrice.toLocaleString('en-IN')}</Text>
+          <Text style={styles.priceNote}>Condition assessment will adjust the final offer.</Text>
+          {isLaptop && (
+            <Text style={styles.priceSubNote}>For {variant?.storage_gb || 'this variant'}</Text>
+          )}
         </View>
 
-        <Text style={styles.sectionTitle}>Quick Diagnostics</Text>
+        <Text style={styles.sectionTitle}>Quick Checks</Text>
         {diagnostics.map((item) => (
           <View key={item} style={styles.diagnosticItem}>
             <View style={styles.check} />
@@ -43,7 +56,7 @@ const BasePriceScreen: React.FC = () => {
 
       <Pressable
         style={styles.nextButton}
-        onPress={() => navigation.navigate('Condition', { variant })}
+        onPress={() => navigation.navigate('Condition', { variant, category })}
       >
         <Text style={styles.nextText}>Continue</Text>
       </Pressable>
@@ -90,6 +103,11 @@ const styles = StyleSheet.create({
     marginTop: 6,
     color: 'rgba(255,255,255,0.85)',
     fontSize: 12,
+  },
+  priceSubNote: {
+    marginTop: 4,
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 11,
   },
   sectionTitle: {
     marginTop: 24,

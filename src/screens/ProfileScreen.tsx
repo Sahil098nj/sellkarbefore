@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useQueryClient } from '@tanstack/react-query';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useOrderHistoryQuery, useProfileQuery, useUpdateProfileMutation } from '../api';
+import { useOrderHistoryQuery, useProfileQuery, useUpdateProfileMutation, type PickupRequest } from '../api';
+import { useAuthHook } from '../hooks';
 import { useAuthStore } from '../store';
 import { COLORS } from '../constants';
 import type { RootStackNavigationProp } from '../navigation/types';
@@ -12,13 +13,16 @@ import type { RootStackNavigationProp } from '../navigation/types';
 const ProfileScreen: React.FC = () => {
   const queryClient = useQueryClient();
   const navigation = useNavigation<RootStackNavigationProp>();
-  const { user, setUser } = useAuthStore();
+  const { user, setUser, logout: clearAuthStore } = useAuthStore();
+  const { logout } = useAuthHook();
   const profileQuery = useProfileQuery(user?.id);
   const ordersQuery = useOrderHistoryQuery(user?.id);
   const updateProfileMutation = useUpdateProfileMutation();
 
   const [name, setName] = useState('');
   const [city, setCity] = useState('');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [expandedAboutUs, setExpandedAboutUs] = useState(false);
 
   React.useEffect(() => {
     if (profileQuery.data) {
@@ -51,6 +55,25 @@ const ProfileScreen: React.FC = () => {
       navigation.navigate('Home');
     } catch {
       // Keep UX simple and non-blocking for now.
+    }
+  };
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+    } catch {
+      clearAuthStore();
+    } finally {
+      queryClient.clear();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Auth' }],
+      });
+      setIsLoggingOut(false);
     }
   };
 
@@ -122,7 +145,7 @@ const ProfileScreen: React.FC = () => {
             </Pressable>
           </View>
 
-          {recentOrders.map((order) => (
+          {recentOrders.map((order: PickupRequest) => (
             <Pressable
               key={order.id}
               style={({ pressed }: { pressed: boolean }) => [styles.orderRow, pressed && styles.pressed]}
@@ -176,6 +199,104 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.saveButtonText}>
             {updateProfileMutation.isPending ? 'Saving...' : 'Save & Go Home'}
           </Text>
+        </Pressable>
+
+        {/* About Us Menu Item */}
+        <Pressable
+          style={({ pressed }) => [styles.menuItemCard, pressed && styles.pressed]}
+          onPress={() => setExpandedAboutUs(!expandedAboutUs)}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuItemIcon}>
+              <MaterialCommunityIcons name="information-outline" size={20} color="#0F4FA8" />
+            </View>
+            <Text style={styles.menuItemText}>About Us</Text>
+          </View>
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={22}
+            color="#64748B"
+            style={[styles.menuItemArrow, expandedAboutUs && styles.menuItemArrowRotated]}
+          />
+        </Pressable>
+
+        {/* About Us Expandable Content */}
+        {expandedAboutUs && (
+          <View style={styles.aboutCard}>
+            <View style={styles.aboutLogoWrap}>
+              <MaterialCommunityIcons name="cellphone" size={32} color="#0F4FA8" />
+            </View>
+            <Text style={styles.aboutTitle}>SellKar India</Text>
+            <Text style={styles.aboutSubtitle}>Fast, Transparent & Doorstep Service</Text>
+            
+            <View style={styles.aboutDivider} />
+            
+            <Text style={styles.aboutDescription}>
+              SellKar India is a fast, transparent, and doorstep service for selling used phones, laptops, tablets, Macs, and other gadgets across India. We help individuals and businesses get fair value for their old devices without wasting time on negotiations, fake buyers, or marketplace hassle.
+            </Text>
+
+            <View style={styles.aboutFeatures}>
+              <View style={styles.aboutFeatureRow}>
+                <MaterialCommunityIcons name="check-circle" size={16} color="#16A34A" />
+                <Text style={styles.aboutFeatureText}>Pick up from your location</Text>
+              </View>
+              <View style={styles.aboutFeatureRow}>
+                <MaterialCommunityIcons name="check-circle" size={16} color="#16A34A" />
+                <Text style={styles.aboutFeatureText}>Evaluate instantly at your doorstep</Text>
+              </View>
+              <View style={styles.aboutFeatureRow}>
+                <MaterialCommunityIcons name="check-circle" size={16} color="#16A34A" />
+                <Text style={styles.aboutFeatureText}>Pay you on the spot</Text>
+              </View>
+            </View>
+
+            <View style={styles.aboutDivider} />
+
+            <Text style={styles.aboutSectionTitle}>Why We're Different</Text>
+            <Text style={styles.aboutDescription}>
+              No hidden cuts, no reselling drama, no waiting. Just a verified team, transparent pricing, and same-day payout.
+            </Text>
+
+            <View style={styles.aboutDivider} />
+
+            <Text style={styles.aboutSectionTitle}>Who We Serve</Text>
+            <Text style={styles.aboutDescription}>
+              Anyone across India who wants to sell electronics quickly — students, professionals, retailers, corporates, and even bulk sellers.
+            </Text>
+
+            <View style={styles.aboutDivider} />
+
+            <View style={styles.aboutStatsRow}>
+              <View style={styles.aboutStat}>
+                <Text style={styles.aboutStatNumber}>18+</Text>
+                <Text style={styles.aboutStatLabel}>Cities</Text>
+              </View>
+              <View style={styles.aboutStatDivider} />
+              <View style={styles.aboutStat}>
+                <Text style={styles.aboutStatNumber}>100%</Text>
+                <Text style={styles.aboutStatLabel}>Transparent</Text>
+              </View>
+              <View style={styles.aboutStatDivider} />
+              <View style={styles.aboutStat}>
+                <Text style={styles.aboutStatNumber}>Same Day</Text>
+                <Text style={styles.aboutStatLabel}>Payout</Text>
+              </View>
+            </View>
+
+            <View style={styles.aboutDivider} />
+
+            <Text style={styles.aboutSectionTitle}>Our Reach</Text>
+            <Text style={styles.aboutDescription}>
+              From Bangalore to 18 cities and growing, powered by a trusted network of local partners and vendors.
+            </Text>
+          </View>
+        )}
+
+        <Pressable
+          style={({ pressed }: { pressed: boolean }) => [styles.logoutButton, pressed && styles.pressed]}
+          onPress={handleLogout}
+        >
+          <Text style={styles.logoutButtonText}>{isLoggingOut ? 'Logging out...' : 'Logout'}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -300,12 +421,152 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   saveButtonText: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
+  logoutButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 15,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+  },
+  logoutButtonText: {
+    color: '#DC2626',
+    fontWeight: '800',
+    fontSize: 16,
+  },
   metaText: {
     marginTop: 4,
     textAlign: 'center',
     color: '#64748B',
     fontSize: 12,
     fontWeight: '600',
+  },
+  // About Us Styles
+  aboutCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+  },
+  aboutLogoWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 16,
+    backgroundColor: '#EAF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  aboutTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginTop: 8,
+  },
+  aboutSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  aboutDivider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 16,
+  },
+  aboutDescription: {
+    fontSize: 13,
+    color: '#475569',
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  aboutFeatures: {
+    marginTop: 12,
+    width: '100%',
+    gap: 10,
+  },
+  aboutFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  aboutFeatureText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  aboutSectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  aboutStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    paddingVertical: 8,
+  },
+  aboutStat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  aboutStatNumber: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F4FA8',
+  },
+  aboutStatLabel: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  aboutStatDivider: {
+    width: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  // Menu Item Styles
+  menuItemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  menuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuItemIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#EAF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuItemText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  menuItemArrow: {
+    transform: [{ rotate: '0deg' }],
+  },
+  menuItemArrowRotated: {
+    transform: [{ rotate: '90deg' }],
   },
 });
 

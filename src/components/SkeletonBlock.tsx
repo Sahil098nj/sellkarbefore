@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, View } from 'react-native';
 
 type SkeletonBlockProps = {
   width?: number | string;
@@ -14,41 +14,9 @@ const SkeletonBlock: React.FC<SkeletonBlockProps> = ({
   borderRadius = 10,
   style,
 }) => {
-  const shimmer = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmer, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmer, {
-          toValue: 0,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-
-    loop.start();
-    return () => loop.stop();
-  }, [shimmer]);
-
   return (
     <View style={[styles.base, { width, height, borderRadius }, style]}>
-      <Animated.View
-        style={[
-          styles.shimmer,
-          {
-            opacity: shimmer.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.28, 0.6],
-            }),
-          },
-        ]}
-      />
+      <View style={styles.shimmer} />
     </View>
   );
 };

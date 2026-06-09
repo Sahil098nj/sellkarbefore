@@ -48,7 +48,7 @@ const NONE_ID = 'none';
 const AccessoriesScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<AccessoriesScreenRouteProp>();
-  const { variant, conditionData } = route.params;
+  const { variant, conditionData, questions, city, modelName, brandName } = route.params;
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggleItem = (id: string) => {
@@ -106,13 +106,20 @@ const AccessoriesScreen: React.FC = () => {
 
       <Pressable
         style={styles.nextButton}
-        onPress={() =>
+        onPress={() => {
+          // Get category from navigation params (passed from ConditionScreen)
+          const category = route.params && 'category' in route.params ? (route.params as any).category : undefined;
           navigation.navigate('Auth', {
             variant,
             conditionData,
             accessoriesData: selected.filter((id) => id !== NONE_ID),
-          })
-        }
+            questions,
+            city,
+            modelName,
+            brandName,
+            category,
+          });
+        }}
       >
         <Text style={styles.nextText}>Continue</Text>
       </Pressable>

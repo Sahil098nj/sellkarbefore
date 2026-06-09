@@ -1,4 +1,5 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../utils/supabaseClient';
 
 // Define the types based on the schema
@@ -72,6 +73,51 @@ const sortDevicesByRecency = (devices: Device[]) => {
   });
 };
 
+const useSupabaseRealtimeInvalidation = ({
+  table,
+  queryKey,
+  filter,
+  enabled = true,
+}: {
+  table: string;
+  queryKey: readonly unknown[];
+  filter?: string;
+  enabled?: boolean;
+}) => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const channelName = [
+      'rt',
+      table,
+      ...queryKey.map((value) => String(value)),
+      filter ?? 'all',
+    ].join(':');
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table,
+          ...(filter ? { filter } : {}),
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: [...queryKey] });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [enabled, filter, queryClient, queryKey, table]);
+};
+
 export const useBrandsQuery = (category: string = 'phone') => useQuery({
   queryKey: ['brands', category],
   queryFn: async () => {
@@ -84,6 +130,18 @@ export const useBrandsQuery = (category: string = 'phone') => useQuery({
     return data as Brand[];
   },
 });
+
+export const useLiveBrandsQuery = (category: string = 'phone') => {
+  const query = useBrandsQuery(category);
+
+  useSupabaseRealtimeInvalidation({
+    table: 'brands',
+    queryKey: ['brands', category],
+    filter: `category=eq.${category}`,
+  });
+
+  return query;
+};
 
 export const useModelsQuery = (brandId: string | null) => useQuery({
   queryKey: ['models', brandId],
@@ -99,6 +157,19 @@ export const useModelsQuery = (brandId: string | null) => useQuery({
   enabled: !!brandId,
 });
 
+export const useLiveModelsQuery = (brandId: string | null) => {
+  const query = useModelsQuery(brandId);
+
+  useSupabaseRealtimeInvalidation({
+    table: 'devices',
+    queryKey: ['models', brandId],
+    filter: brandId ? `brand_id=eq.${brandId}` : undefined,
+    enabled: !!brandId,
+  });
+
+  return query;
+};
+
 export const useAllDevicesQuery = () => useQuery({
   queryKey: ['all-devices'],
   queryFn: async () => {
@@ -109,6 +180,17 @@ export const useAllDevicesQuery = () => useQuery({
     return sortDevicesByRecency(data as Device[]);
   },
 });
+
+export const useLiveAllDevicesQuery = () => {
+  const query = useAllDevicesQuery();
+
+  useSupabaseRealtimeInvalidation({
+    table: 'devices',
+    queryKey: ['all-devices'],
+  });
+
+  return query;
+};
 
 export const useCitiesQuery = () => useQuery({
   queryKey: ['cities'],
@@ -122,6 +204,17 @@ export const useCitiesQuery = () => useQuery({
     return data as City[];
   },
 });
+
+export const useLiveCitiesQuery = () => {
+  const query = useCitiesQuery();
+
+  useSupabaseRealtimeInvalidation({
+    table: 'cities',
+    queryKey: ['cities'],
+  });
+
+  return query;
+};
 
 export const useVariantsQuery = (deviceId: string | null) => useQuery({
   queryKey: ['variants', deviceId],
@@ -147,3 +240,117 @@ export const useVariantsQuery = (deviceId: string | null) => useQuery({
   },
   enabled: !!deviceId,
 });
+
+export const useLiveVariantsQuery = (deviceId: string | null) => {
+  const query = useVariantsQuery(deviceId);
+
+  useSupabaseRealtimeInvalidation({
+    table: 'variants',
+    queryKey: ['variants', deviceId],
+    filter: deviceId ? `device_id=eq.${deviceId}` : undefined,
+    enabled: !!deviceId,
+  });
+
+  return query;
+};
+
+// ── Warranty Prices: live pricing by variant ─────────────────────────────────
+
+export interface WarrantyPriceRow {
+  id: string;
+  variant_id: string;
+  price_0_3_months: number;
+  price_3_6_months: number;
+  price_6_11_months: number;
+  price_11_plus_months: number;
+  created_at: string;
+  charger_deduction_amount: number;
+  box_deduction_amount: number;
+  bill_deduction_amount: number;
+  notes: string | null;
+  phoneconditiondeduction_good: number;
+  phoneconditiondeduction_average: number;
+  phoneconditiondeduction_belowaverage: number;
+  call_deduction_percentage: number;
+  touch_deduction_percentage: number;
+  screen_deduction_percentage: number;
+  battery_deduction_percentage: number;
+}
+
+export const useWarrantyPricesQuery = (variantId: string | null) =>
+  useQuery({
+    queryKey: ['warranty-prices', variantId],
+    queryFn: async () => {
+      if (!variantId) return null;
+      const { data, error } = await supabase
+        .from('warranty_prices')
+        .select('*')
+        .eq('variant_id', variantId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as WarrantyPriceRow | null;
+    },
+    enabled: !!variantId,
+  });
+
+export const useLiveWarrantyPricesQuery = (variantId: string | null) => {
+  const query = useWarrantyPricesQuery(variantId);
+
+  useSupabaseRealtimeInvalidation({
+    table: 'warranty_prices',
+    queryKey: ['warranty-prices', variantId],
+    filter: variantId ? `variant_id=eq.${variantId}` : undefined,
+    enabled: !!variantId,
+  });
+
+  return query;
+};
+
+// ── Laptop Prices: separate pricing table for laptops ────────────────────────
+
+export interface LaptopPriceRow {
+  id: string;
+  variant_id: string;
+  price_less_than_1yr: number;
+  price_1_to_3yrs: number;
+  price_more_than_3yrs: number;
+  condition_deduction_good: number;      // percentage to deduct for "good"
+  condition_deduction_average: number;   // percentage to deduct for "average"
+  condition_deduction_below_average: number; // percentage to deduct for "below average"
+  charger_deduction_amount: number;      // rupees to deduct if no charger
+  box_deduction_amount: number;          // rupees to deduct if no box
+  bill_deduction_amount: number;        // rupees to deduct if no bill
+  created_at: string;
+}
+
+export const useLaptopPricesQuery = (variantId: string | null) =>
+  useQuery({
+    queryKey: ['laptop-prices', variantId],
+    queryFn: async () => {
+      if (!variantId) return null;
+      const { data, error } = await supabase
+        .from('laptop_prices')
+        .select('*')
+        .eq('variant_id', variantId)
+        .maybeSingle();
+      if (error) {
+        console.warn('[laptop-prices] Query failed:', error.message);
+        return null;
+      }
+      return data as LaptopPriceRow | null;
+    },
+    enabled: !!variantId,
+  });
+
+export const useLiveLaptopPricesQuery = (variantId: string | null) => {
+  const query = useLaptopPricesQuery(variantId);
+
+  useSupabaseRealtimeInvalidation({
+    table: 'laptop_prices',
+    queryKey: ['laptop-prices', variantId],
+    filter: variantId ? `variant_id=eq.${variantId}` : undefined,
+    enabled: !!variantId,
+  });
+
+  return query;
+};

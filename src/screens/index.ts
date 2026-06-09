@@ -14,3 +14,7 @@ export { default as AddressPickupScreen } from './AddressPickupScreen';
 export { default as TrackOrderScreen } from './TrackOrderScreen';
 export { default as OrdersScreen } from './OrdersScreen';
 export { default as ProfileScreen } from './ProfileScreen';
+export { default as LeadsScreen } from './LeadsScreen';
+export { default as PickupRequestsScreen } from './PickupRequestsScreen';
+export { default as PrivacyPolicyScreen } from './PrivacyPolicyScreen';
+export { default as AboutUsScreen } from './AboutUsScreen';

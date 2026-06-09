@@ -8,6 +8,7 @@ import type { RootStackNavigationProp } from '../navigation/types';
 const SplashScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -17,12 +18,35 @@ const SplashScreen: React.FC = () => {
       useNativeDriver: true,
     }).start();
 
+    // Animate the progress bar
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(progressAnim, {
+          toValue: 1,
+          duration: 800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+        Animated.timing(progressAnim, {
+          toValue: 0,
+          duration: 800,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: false,
+        }),
+      ])
+    ).start();
+
     const timer = setTimeout(() => {
       navigation.navigate('Onboarding');
     }, 2400);
 
     return () => clearTimeout(timer);
-  }, [fadeAnim, navigation]);
+  }, [fadeAnim, navigation, progressAnim]);
+
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['20%', '80%'],
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,7 +65,7 @@ const SplashScreen: React.FC = () => {
       </Animated.View>
       <View style={styles.footer}>
         <View style={styles.progressTrack}>
-          <View style={styles.progressFill} />
+          <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
         </View>
         <Text style={styles.footerText}>Secure & Reliable</Text>
       </View>
@@ -81,18 +105,22 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logoWrap: {
+    width: 160,
+    height: 160,
     backgroundColor: COLORS.WHITE,
-    padding: 8,
-    borderRadius: 24,
+    borderRadius: 28,
     shadowColor: COLORS.PRIMARY,
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 6,
-    marginBottom: 12,
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+    marginBottom: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 14,
   },
   logo: {
-    width: 138,
-    height: 138,
+    width: 132,
+    height: 132,
   },
   title: {
     fontSize: 28,
@@ -120,7 +148,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   progressFill: {
-    width: '40%',
     height: '100%',
     backgroundColor: COLORS.PRIMARY,
   },

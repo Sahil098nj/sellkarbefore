@@ -44,6 +44,7 @@ export const API_BASE_URL = 'https://api.sellkarinda.com';
 
 export const NAVIGATION_ROUTES = {
   SPLASH: 'Splash',
+  DEBUG: 'Debug',
   ONBOARDING: 'Onboarding',
   HOME: 'Home',
   BRAND: 'Brand',

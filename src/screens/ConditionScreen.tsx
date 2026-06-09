@@ -7,11 +7,17 @@ import type { RootStackNavigationProp, RootStackParamList } from '../navigation/
 
 type ConditionScreenRouteProp = RouteProp<RootStackParamList, 'Condition'>;
 
-const ageOptions = [
+const phoneAgeOptions = [
   { id: '0-3', label: '0-3 Months', desc: 'No Physical Damage' },
   { id: '3-6', label: '3-6 Months', desc: 'No Physical Damage' },
   { id: '6-11', label: '6-11 Months', desc: 'No Physical Damage' },
   { id: '11+', label: '11+ Months', desc: 'Out Of Warranty' },
+];
+
+const laptopAgeOptions = [
+  { id: 'less_than_1yr', label: 'Less than 1 year', desc: 'Like new condition' },
+  { id: '1_to_3yrs', label: '1-3 years', desc: 'Regular usage' },
+  { id: 'more_than_3yrs', label: 'More than 3 years', desc: 'Heavy usage' },
 ];
 
 const conditionOptions = [
@@ -23,7 +29,11 @@ const conditionOptions = [
 const ConditionScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<ConditionScreenRouteProp>();
-  const { variant } = route.params;
+  const { variant, city, questions, modelName, brandName, category } = route.params ?? {};
+  
+  const isLaptop = category === 'laptop';
+  const ageOptions = isLaptop ? laptopAgeOptions : phoneAgeOptions;
+  const ageQuestion = isLaptop ? 'How old is your device?' : 'How old is your phone?';
 
   const [selectedAge, setSelectedAge] = useState<string | null>(null);
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
@@ -34,7 +44,7 @@ const ConditionScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Device Details</Text>
 
-      <Text style={styles.sectionTitle}>How old is your phone?</Text>
+      <Text style={styles.sectionTitle}>{ageQuestion}</Text>
       <View style={styles.list}>
         {ageOptions.map((option) => {
           const isActive = option.id === selectedAge;
@@ -82,6 +92,10 @@ const ConditionScreen: React.FC = () => {
               deviceAge: selectedAge,
               overallCondition: selectedCondition,
             },
+            questions,
+            city,
+            modelName,
+            brandName,
           })
         }
       >

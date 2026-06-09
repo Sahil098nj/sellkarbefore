@@ -1,118 +1,235 @@
 import React, { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { useQuery } from '@tanstack/react-query';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { getPickupTrackingRequest } from '../api';
 import { COLORS } from '../constants';
 import type { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
 
 type TrackOrderScreenRouteProp = RouteProp<RootStackParamList, 'TrackOrder'>;
 
-const timelineSteps = [
-  { key: 'placed', title: 'Order Placed', time: 'May 24, 10:30 AM', note: 'We have received your sell order.', status: 'done' },
-  { key: 'assigned', title: 'Technician Assigned', time: 'May 24, 11:00 AM', note: 'Rahul Sharma will visit for pickup.', status: 'done' },
-  { key: 'pickup', title: 'Out for Pickup', time: 'Today', note: 'Technician is on the way to your location.', status: 'active' },
-  { key: 'verified', title: 'Device Verified', time: 'Pending', note: '', status: 'pending' },
-  { key: 'paid', title: 'Payment Transferred', time: 'Pending', note: '', status: 'pending' },
-];
+const statusRank: Record<string, number> = {
+  new: 0,
+  rnr: 0,
+  'not-interested': 0,
+  scheduled: 1,
+  rescheduled: 1,
+  confirmed: 1,
+  pending: 1,
+  'in-progress': 2,
+  'in-transit': 2,
+  picked: 3,
+  completed: 4,
+  cancelled: 0,
+};
+
+const formatDateTime = (value?: string | null) => {
+  if (!value) return 'Pending';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
 
 const TrackOrderScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<TrackOrderScreenRouteProp>();
+  const trackingId = route.params?.trackingId ?? route.params?.orderId ?? route.params?.variant?.id ?? '';
 
-  const quote = route.params?.finalPrice ?? (route.params?.variant?.base_price ? Math.round(route.params.variant.base_price * 1.12) : 41200);
-  const modelName = route.params?.variant?.model_name ?? 'iPhone 14 Pro';
-  const storage = route.params?.variant?.storage_gb ? `${route.params.variant.storage_gb} GB` : '128 GB';
-  const slotLabel = `${route.params?.pickupDateLabel ?? 'Today'}, ${route.params?.pickupTime ?? '04:00 PM - 07:00 PM'}`;
-  const city = route.params?.city ?? 'Bengaluru';
-  const orderId = useMemo(
-    () => route.params?.orderId ?? `SK-${Math.floor(1000 + (quote % 9000))}`,
-    [quote, route.params?.orderId],
-  );
-  const currentStatus = route.params?.status ?? 'scheduled';
+  const trackingQuery = useQuery({
+    queryKey: ['pickup-tracking', trackingId],
+    enabled: !!trackingId,
+    queryFn: async () => getPickupTrackingRequest(trackingId),
+  });
+
+  const request = trackingQuery.data;
+  const currentStatus = (request?.status ?? route.params?.status ?? 'scheduled').toLowerCase();
+  const stage = statusRank[currentStatus] ?? 1;
+
+  const quote = Number(request?.final_price ?? route.params?.finalPrice ?? route.params?.variant?.base_price ?? 0);
+  const modelName = request?.device?.model_name ?? route.params?.variant?.model_name ?? 'Device';
+  const storage = request?.variant?.storage_gb
+    ? `${request.variant.storage_gb}${request.variant.ram_options?.size_gb ? ` / ${request.variant.ram_options.size_gb} GB RAM` : ''}`
+    : route.params?.variant?.storage_gb
+      ? `${route.params.variant.storage_gb} GB`
+      : 'Storage pending';
+  const city = request?.city_row?.name ?? route.params?.city ?? 'Bengaluru';
+  const slotLabel = `${formatDateTime(request?.pickup_date)}${request?.pickup_time ? `, ${request.pickup_time}` : ''}`;
+  const address = request?.address ?? route.params?.address ?? `Home, Indiranagar, ${city}`;
+  const orderLabel = request?.order_id ?? route.params?.orderId ?? request?.id ?? 'TBD';
+
+  const executiveName = useMemo(() => {
+    const candidates = [request?.updated_by, request?.notes, request?.submitted_by]
+      .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+      .map((value) => value.trim());
+
+    return candidates[0] ?? null;
+  }, [request?.updated_by, request?.notes, request?.submitted_by]);
+
+  const timeline = useMemo(() => {
+    const assigned = stage >= 1;
+    const pickup = stage >= 2;
+    const verified = stage >= 3;
+    const paid = stage >= 4;
+
+    return [
+      {
+        key: 'placed',
+        title: 'Order Placed',
+        time: formatDateTime(request?.created_at),
+        note: 'We have received your pickup request.',
+        status: assigned ? ('done' as const) : ('pending' as const),
+      },
+      {
+        key: 'assigned',
+        title: 'Executive Assigned',
+        time: assigned ? formatDateTime(request?.updated_at ?? request?.created_at) : 'Pending',
+        note: executiveName ? `${executiveName} will visit for pickup.` : 'Pickup executive will appear once assigned.',
+        status: assigned ? ('done' as const) : ('pending' as const),
+      },
+      {
+        key: 'pickup',
+        title: 'Out for Pickup',
+        time: pickup ? 'Today' : 'Pending',
+        note: 'Executive is on the way to your location.',
+        status: pickup ? ('active' as const) : ('pending' as const),
+      },
+      {
+        key: 'verified',
+        title: 'Device Verified',
+        time: verified ? 'Completed' : 'Pending',
+        note: 'Device verification happens at pickup time.',
+        status: verified ? ('done' as const) : ('pending' as const),
+      },
+      {
+        key: 'paid',
+        title: 'Payment Transferred',
+        time: paid ? 'Completed' : 'Pending',
+        note: 'Payment is released after the request is marked completed.',
+        status: paid ? ('done' as const) : ('pending' as const),
+      },
+    ];
+  }, [executiveName, request?.created_at, request?.updated_at, stage]);
+
+  const currentStatusLabel =
+    currentStatus.length > 0 ? currentStatus.replace(/-/g, ' ').toUpperCase() : 'SCHEDULED';
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.backIcon}>‹</Text>
+        <Pressable style={styles.backPressable} onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.backIcon}>‹</Text>
+        </Pressable>
         <Text style={styles.title}>Track Order</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.deviceCard}>
-          <View style={styles.deviceThumb}><MaterialCommunityIcons name="cellphone" size={20} color="#1D4ED8" /></View>
-          <View style={styles.deviceInfo}>
-            <Text style={styles.deviceName}>{modelName}</Text>
-            <Text style={styles.deviceSub}>{storage} · Flawless</Text>
-            <Text style={styles.deviceQuote}>₹{quote.toLocaleString('en-IN')}</Text>
+        {trackingQuery.isLoading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color={COLORS.PRIMARY} />
+            <Text style={styles.metaText}>Loading pickup details...</Text>
           </View>
-          <View style={styles.orderBadge}><Text style={styles.orderBadgeText}>ORDER #{orderId.slice(0, 8).toUpperCase()}</Text></View>
-        </View>
-
-        <View style={styles.statusBadgeTop}>
-          <Text style={styles.statusBadgeTopText}>Current status: {currentStatus.toUpperCase()}</Text>
-        </View>
-
-        <View style={styles.agentCard}>
-          <View style={styles.agentAvatar}><Text style={styles.agentInitials}>RS</Text></View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.agentName}>Rahul Sharma</Text>
-            <Text style={styles.agentRole}>Pickup Executive</Text>
-            <Text style={styles.agentMeta}>★★★★★ (4.8)</Text>
+        ) : trackingQuery.isError ? (
+          <View style={styles.errorBox}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={22} color="#EF4444" />
+            <Text style={styles.errorText}>Unable to load pickup tracking details.</Text>
           </View>
-          <View style={styles.agentActions}>
-            <MaterialCommunityIcons name="phone-outline" size={18} color="#0F4FA8" />
-            <MaterialCommunityIcons name="chat-processing-outline" size={18} color="#0F4FA8" />
-          </View>
-        </View>
-
-        <View style={styles.statusCard}>
-          <Text style={styles.sectionTitle}>Order Status</Text>
-          {timelineSteps.map((step, index) => (
-            <View key={step.key} style={styles.stepRow}>
-              <View style={styles.stepIndicator}>
-                <View
-                  style={[
-                    styles.dot,
-                    step.status === 'done' && styles.dotDone,
-                    step.status === 'active' && styles.dotActive,
-                  ]}
-                >
-                  {step.status === 'done' ? (
-                    <MaterialCommunityIcons name="check" size={12} color="#FFFFFF" />
-                  ) : step.status === 'active' ? (
-                    <MaterialCommunityIcons name="progress-clock" size={12} color="#FFFFFF" />
-                  ) : null}
-                </View>
-                {index !== timelineSteps.length - 1 && <View style={styles.line} />}
+        ) : request ? (
+          <>
+            <View style={styles.deviceCard}>
+              <View style={styles.deviceThumb}>
+                <MaterialCommunityIcons name="cellphone" size={20} color="#1D4ED8" />
               </View>
-              <View style={styles.stepContent}>
-                <Text style={[styles.stepTitle, step.status === 'pending' && styles.pendingText]}>{step.title}</Text>
-                <Text style={[styles.stepTime, step.status === 'pending' && styles.pendingText]}>{step.time}</Text>
-                {step.note ? <Text style={styles.stepDesc}>{step.note}</Text> : null}
+              <View style={styles.deviceInfo}>
+                <Text style={styles.deviceName}>{modelName}</Text>
+                <Text style={styles.deviceSub}>{storage}</Text>
+                <Text style={styles.deviceQuote}>₹{quote.toLocaleString('en-IN')}</Text>
+              </View>
+              <View style={styles.orderBadge}>
+                <Text style={styles.orderBadgeText}>ORDER #{String(orderLabel).slice(0, 8).toUpperCase()}</Text>
               </View>
             </View>
-          ))}
-        </View>
 
-        <View style={styles.detailCard}>
-          <View style={styles.detailLabelRow}>
-            <MaterialCommunityIcons name="calendar-month-outline" size={14} color="#94A3B8" />
-            <Text style={styles.detailLabel}>PICKUP SLOT</Text>
-          </View>
-          <Text style={styles.detailValue}>{slotLabel}</Text>
-          <View style={[styles.detailLabelRow, { marginTop: 14 }]}>
-            <MaterialCommunityIcons name="map-marker-outline" size={14} color="#94A3B8" />
-            <Text style={styles.detailLabel}>ADDRESS</Text>
-          </View>
-          <Text style={styles.detailValue}>{route.params?.address ?? `Home, Indiranagar, ${city}`}</Text>
-        </View>
+            <View style={styles.statusBadgeTop}>
+              <Text style={styles.statusBadgeTopText}>Current status: {currentStatusLabel}</Text>
+            </View>
 
-        <Pressable
-          style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed]}
-          onPress={() => navigation.navigate('Home')}
-        >
+            <View style={styles.agentCard}>
+              <View style={styles.agentAvatar}>
+                <Text style={styles.agentInitials}>
+                  {(executiveName ?? 'P').slice(0, 2).toUpperCase()}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.agentName}>{executiveName ?? 'Pickup executive pending assignment'}</Text>
+                <Text style={styles.agentRole}>Pickup Executive</Text>
+                <Text style={styles.agentMeta}>
+                  {currentStatus === 'completed' ? 'Completed and verified' : 'Assigned once pickup is scheduled'}
+                </Text>
+              </View>
+              <View style={styles.agentActions}>
+                <MaterialCommunityIcons name="phone-outline" size={18} color="#0F4FA8" />
+                <MaterialCommunityIcons name="chat-processing-outline" size={18} color="#0F4FA8" />
+              </View>
+            </View>
+
+            <View style={styles.statusCard}>
+              <Text style={styles.sectionTitle}>Order Status</Text>
+              {timeline.map((step, index) => (
+                <View key={step.key} style={styles.stepRow}>
+                  <View style={styles.stepIndicator}>
+                    <View
+                      style={[
+                        styles.dot,
+                        step.status === 'done' && styles.dotDone,
+                        step.status === 'active' && styles.dotActive,
+                      ]}
+                    >
+                      {step.status === 'done' ? (
+                        <MaterialCommunityIcons name="check" size={12} color="#FFFFFF" />
+                      ) : step.status === 'active' ? (
+                        <MaterialCommunityIcons name="progress-clock" size={12} color="#FFFFFF" />
+                      ) : null}
+                    </View>
+                    {index !== timeline.length - 1 && <View style={styles.line} />}
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={[styles.stepTitle, step.status === 'pending' && styles.pendingText]}>{step.title}</Text>
+                    <Text style={[styles.stepTime, step.status === 'pending' && styles.pendingText]}>{step.time}</Text>
+                    {step.note ? <Text style={styles.stepDesc}>{step.note}</Text> : null}
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.detailCard}>
+              <View style={styles.detailLabelRow}>
+                <MaterialCommunityIcons name="calendar-month-outline" size={14} color="#94A3B8" />
+                <Text style={styles.detailLabel}>PICKUP SLOT</Text>
+              </View>
+              <Text style={styles.detailValue}>{slotLabel}</Text>
+              <View style={[styles.detailLabelRow, { marginTop: 14 }]}>
+                <MaterialCommunityIcons name="map-marker-outline" size={14} color="#94A3B8" />
+                <Text style={styles.detailLabel}>ADDRESS</Text>
+              </View>
+              <Text style={styles.detailValue}>{address}</Text>
+            </View>
+          </>
+        ) : (
+          <View style={styles.errorBox}>
+            <MaterialCommunityIcons name="magnify-close" size={22} color="#F59E0B" />
+            <Text style={styles.errorText}>No pickup request found for this order.</Text>
+          </View>
+        )}
+
+        <Pressable style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed]} onPress={() => navigation.navigate('Home')}>
           <Text style={styles.nextText}>Back to Home</Text>
         </Pressable>
       </ScrollView>
@@ -135,6 +252,12 @@ const styles = StyleSheet.create({
     borderBottomColor: '#D5DFEC',
     backgroundColor: '#F8FAFC',
   },
+  backPressable: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   backIcon: {
     fontSize: 26,
     color: '#334155',
@@ -151,6 +274,31 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 12,
     paddingBottom: 22,
+  },
+  loadingBox: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    gap: 12,
+  },
+  errorBox: {
+    borderRadius: 14,
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#9A3412',
+    fontWeight: '700',
+    flex: 1,
+  },
+  metaText: {
+    color: '#64748B',
+    fontWeight: '600',
   },
   deviceCard: {
     borderRadius: 14,
@@ -253,9 +401,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   agentMeta: {
-    color: '#F59E0B',
+    color: '#1D4ED8',
     fontSize: 11,
     marginTop: 2,
+    fontWeight: '700',
   },
   agentActions: {
     flexDirection: 'row',
@@ -301,11 +450,6 @@ const styles = StyleSheet.create({
   },
   dotActive: {
     backgroundColor: '#1D5FBF',
-  },
-  dotIcon: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '800',
   },
   line: {
     width: 2.5,
@@ -359,17 +503,17 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     fontSize: 18,
     fontWeight: '700',
+    lineHeight: 24,
   },
   nextButton: {
-    marginTop: 14,
-    backgroundColor: '#0F4FA8',
+    marginTop: 12,
+    backgroundColor: COLORS.PRIMARY,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
   },
   nextButtonPressed: {
-    transform: [{ scale: 0.985 }],
-    opacity: 0.92,
+    opacity: 0.9,
   },
   nextText: {
     color: '#FFFFFF',

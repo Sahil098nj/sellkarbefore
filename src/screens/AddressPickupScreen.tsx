@@ -63,6 +63,11 @@ const AddressPickupScreen: React.FC = () => {
       return;
     }
 
+    if (!route.params?.variant?.id || !route.params?.variant?.device_id) {
+      Alert.alert('Unable to confirm order', 'Selected device information is incomplete. Please reselect your model and try again.');
+      return;
+    }
+
     const fullAddress = `${houseStreet.trim()}, ${area.trim()}, ${addressCity} - ${pincode.trim()}`;
     const selectedDateItem = dateSlots.find((item) => item.id === selectedDate) ?? dateSlots[0];
 
@@ -70,6 +75,10 @@ const AddressPickupScreen: React.FC = () => {
       const pickup = await createPickupMutation.mutateAsync({
         customerId: user.id,
         leadId: user.leadId,
+        userPhone: user.phone,
+        customerName: user.name,
+        deviceId: route.params.variant.device_id,
+        variantId: route.params.variant.id,
         deviceName: modelName,
         deviceVariant: storage,
         conditionAnswers: {
@@ -80,6 +89,9 @@ const AddressPickupScreen: React.FC = () => {
         },
         priceFinal: quote,
         pickupAddress: fullAddress,
+        pincode: pincode.trim(),
+        pickupDate: selectedDate,
+        pickupTime: selectedTime,
         city: addressCity,
         status: 'scheduled',
       });
@@ -113,36 +125,57 @@ const AddressPickupScreen: React.FC = () => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-          <View style={styles.stepHeader}>
-            <Text style={styles.backIcon}>‹</Text>
-            <View style={styles.stepTextWrap}>
-              <Text style={styles.stepLabel}>STEP 7 OF 8</Text>
-              <Text style={styles.title}>Finalize Booking</Text>
+          {/* Header */}
+          <View style={styles.header}>
+            <Pressable onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Home' }] })} style={styles.backButton}>
+              <MaterialCommunityIcons name="chevron-left" size={28} color="#1E293B" />
+            </Pressable>
+            <View style={styles.headerCenter}>
+              <Text style={styles.headerTitle}>Schedule Pickup</Text>
+              <Text style={styles.headerSubtitle}>Final step - confirm your booking</Text>
             </View>
-            <Text style={styles.helpIcon}>?</Text>
+            <Pressable style={styles.helpButton}>
+              <MaterialCommunityIcons name="head-question" size={22} color="#64748B" />
+            </Pressable>
           </View>
 
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressTrack}>
+              <View style={styles.progressFill} />
+            </View>
+            <Text style={styles.progressStep}>7/8</Text>
+          </View>
+
+          {/* Device Summary Card */}
           <View style={styles.deviceCard}>
-            <View style={styles.deviceThumb}>
-              <MaterialCommunityIcons name="cellphone" size={20} color="#1D4ED8" />
+            <View style={styles.deviceIconWrap}>
+              <MaterialCommunityIcons name="cellphone" size={24} color="#0F4FA8" />
             </View>
-            <View style={styles.deviceInfo}>
-              <Text style={styles.deviceName}>{modelName} ({storage})</Text>
-              <Text style={styles.deviceQuote}>Quote: ₹{quote.toLocaleString('en-IN')}</Text>
+            <View style={styles.deviceDetails}>
+              <Text style={styles.deviceName}>{modelName}</Text>
+              <Text style={styles.deviceStorage}>{storage}</Text>
+            </View>
+            <View style={styles.priceBadge}>
+              <MaterialCommunityIcons name="currency-inr" size={14} color="#16A34A" />
+              <Text style={styles.priceValue}>{quote.toLocaleString('en-IN')}</Text>
             </View>
           </View>
 
-          <View style={styles.sectionTitleRow}>
-            <MaterialCommunityIcons name="map-marker-outline" size={18} color="#0F4FA8" />
-            <Text style={styles.sectionTitle}>Pickup Address</Text>
+          {/* Address Section */}
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIconWrap}>
+              <MaterialCommunityIcons name="map-marker-radius" size={18} color="#FFFFFF" />
+            </View>
+            <Text style={styles.sectionTitle}>Pickup Location</Text>
           </View>
 
-          <View style={styles.addressForm}>
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>House / Flat No. & Street *</Text>
+          <View style={styles.addressCard}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.floatingLabel}>House / Flat & Street</Text>
               <TextInput
-                style={styles.input}
-                placeholder="e.g. 402, Sunshine Heights, 12th Main Road"
+                style={styles.floatingInput}
+                placeholder="e.g. 402, Sunshine Heights, 12th Main"
                 placeholderTextColor="#94A3B8"
                 value={houseStreet}
                 onChangeText={setHouseStreet}
@@ -150,11 +183,11 @@ const AddressPickupScreen: React.FC = () => {
               />
             </View>
             <View style={styles.inputDivider} />
-            <View style={styles.inputWrap}>
-              <Text style={styles.inputLabel}>Area / Landmark *</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.floatingLabel}>Area / Landmark</Text>
               <TextInput
-                style={styles.input}
-                placeholder="e.g. Indiranagar"
+                style={styles.floatingInput}
+                placeholder="e.g. Indiranagar, near metro station"
                 placeholderTextColor="#94A3B8"
                 value={area}
                 onChangeText={setArea}
@@ -162,12 +195,12 @@ const AddressPickupScreen: React.FC = () => {
               />
             </View>
             <View style={styles.inputDivider} />
-            <View style={styles.inputRowTwo}>
-              <View style={[styles.inputWrap, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>Pincode *</Text>
+            <View style={styles.rowInputs}>
+              <View style={styles.inputGroupSm}>
+                <Text style={styles.floatingLabel}>Pincode</Text>
                 <TextInput
-                  style={styles.input}
-                  placeholder="560 038"
+                  style={styles.floatingInput}
+                  placeholder="560038"
                   placeholderTextColor="#94A3B8"
                   value={pincode}
                   onChangeText={(v) => setPincode(v.replace(/\D/g, '').slice(0, 6))}
@@ -176,30 +209,43 @@ const AddressPickupScreen: React.FC = () => {
                   returnKeyType="done"
                 />
               </View>
-              <View style={[styles.inputWrap, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>City</Text>
-                <Text style={styles.cityReadOnly}>{addressCity}</Text>
+              <View style={styles.inputGroupSm}>
+                <Text style={styles.floatingLabel}>City</Text>
+                <Text style={styles.readOnlyValue}>{addressCity}</Text>
               </View>
             </View>
           </View>
 
-          <View style={styles.sectionTitleRow}>
-            <MaterialCommunityIcons name="calendar-month-outline" size={18} color="#0F4FA8" />
-            <Text style={styles.sectionTitle}>Select Slot</Text>
+          {/* Date Selection Section */}
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIconWrap}>
+              <MaterialCommunityIcons name="calendar-check" size={18} color="#FFFFFF" />
+            </View>
+            <Text style={styles.sectionTitle}>Select Date</Text>
           </View>
+
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.dateRow}
+            contentContainerStyle={styles.dateScroll}
           >
-            {dateSlots.map((item) => {
+            {dateSlots.slice(0, 14).map((item) => {
               const isActive = selectedDate === item.id;
               return (
                 <Pressable
                   key={item.id}
-                  style={({ pressed }) => [styles.dateCard, isActive && styles.dateCardActive, pressed && styles.cardPressed]}
+                  style={({ pressed }) => [
+                    styles.dateCard,
+                    isActive && styles.dateCardActive,
+                    pressed && styles.cardPressed,
+                  ]}
                   onPress={() => setSelectedDate(item.id)}
                 >
+                  {isActive && (
+                    <View style={styles.selectedCheck}>
+                      <MaterialCommunityIcons name="check" size={10} color="#FFFFFF" />
+                    </View>
+                  )}
                   <Text style={[styles.dateMonth, isActive && styles.dateMonthActive]}>{item.month}</Text>
                   <Text style={[styles.dateDay, isActive && styles.dateDayActive]}>{item.day}</Text>
                   <Text style={[styles.dateWeek, isActive && styles.dateWeekActive]}>{item.week}</Text>
@@ -208,48 +254,87 @@ const AddressPickupScreen: React.FC = () => {
             })}
           </ScrollView>
 
+          {/* Time Selection Section */}
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIconWrap}>
+              <MaterialCommunityIcons name="clock-outline" size={18} color="#FFFFFF" />
+            </View>
+            <Text style={styles.sectionTitle}>Select Time Slot</Text>
+          </View>
+
           <View style={styles.timeGrid}>
-            {timeSlots.map((slot) => {
+            {timeSlots.map((slot, index) => {
               const isActive = selectedTime === slot;
               return (
                 <Pressable
                   key={slot}
-                  style={({ pressed }) => [styles.timeCard, isActive && styles.timeCardActive, pressed && styles.cardPressed]}
+                  style={({ pressed }) => [
+                    styles.timeCard,
+                    isActive && styles.timeCardActive,
+                    pressed && styles.cardPressed,
+                  ]}
                   onPress={() => setSelectedTime(slot)}
                 >
-                  <Text style={[styles.timeText, isActive && styles.timeTextActive]}>
-                    {slot}
-                  </Text>
+                  <View style={[styles.radioOuter, isActive && styles.radioOuterActive]}>
+                    {isActive && <View style={styles.radioInner} />}
+                  </View>
+                  <Text style={[styles.timeText, isActive && styles.timeTextActive]}>{slot}</Text>
                 </Pressable>
               );
-          })}
+            })}
           </View>
 
-          <View style={styles.noteCard}>
-            <MaterialCommunityIcons name="check-decagram-outline" size={16} color="#16A34A" />
-            <Text style={styles.noteText}>Your device will be professionally inspected at your doorstep. Once confirmed, payment is transferred instantly.</Text>
+          {/* Trust Badges */}
+          <View style={styles.trustSection}>
+            <View style={styles.trustBadge}>
+              <MaterialCommunityIcons name="shield-check" size={16} color="#16A34A" />
+              <Text style={styles.trustText}>Secure Payment</Text>
+            </View>
+            <View style={styles.trustBadge}>
+              <MaterialCommunityIcons name="truck-check" size={16} color="#0F4FA8" />
+              <Text style={styles.trustText}>Free Pickup</Text>
+            </View>
+            <View style={styles.trustBadge}>
+              <MaterialCommunityIcons name="star-check" size={16} color="#F59E0B" />
+              <Text style={styles.trustText}>Best Price</Text>
+            </View>
+          </View>
+
+          {/* Info Card */}
+          <View style={styles.infoCard}>
+            <MaterialCommunityIcons name="information-outline" size={18} color="#0F4FA8" />
+            <Text style={styles.infoText}>
+              Device inspection happens at your doorstep. Payment is transferred instantly after verification.
+            </Text>
           </View>
         </ScrollView>
 
+        {/* Bottom Bar */}
         <View style={styles.bottomBar}>
-          <View>
-            <Text style={styles.bottomLabel}>TOTAL QUOTE</Text>
-            <Text style={styles.bottomValue}>₹{quote.toLocaleString('en-IN')}</Text>
+          <View style={styles.bottomLeft}>
+            <Text style={styles.bottomLabel}>YOUR QUOTE</Text>
+            <View style={styles.priceRow}>
+              <MaterialCommunityIcons name="currency-inr" size={20} color="#0F172A" />
+              <Text style={styles.bottomPrice}>{quote.toLocaleString('en-IN')}</Text>
+            </View>
           </View>
-          <View style={styles.badgeWrap}>
-            <Text style={styles.badgeText}>Best Price Guaranteed</Text>
-          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.confirmButton,
+              pressed && styles.confirmButtonPressed,
+              createPickupMutation.isPending && styles.confirmButtonLoading,
+            ]}
+            disabled={createPickupMutation.isPending}
+            onPress={handleConfirm}
+          >
+            <Text style={styles.confirmText}>
+              {createPickupMutation.isPending ? 'Scheduling...' : 'Confirm Pickup'}
+            </Text>
+            {!createPickupMutation.isPending && (
+              <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" style={styles.confirmArrow} />
+            )}
+          </Pressable>
         </View>
-
-        <Pressable
-          style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed]}
-          disabled={createPickupMutation.isPending}
-          onPress={handleConfirm}
-        >
-          <Text style={styles.nextText}>
-            {createPickupMutation.isPending ? 'Confirming...' : 'Confirm Order  →'}
-          </Text>
-        </Pressable>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -258,161 +343,250 @@ const AddressPickupScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EEF2F6',
+    backgroundColor: '#F8FAFC',
   },
   keyboardWrap: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 220,
+    paddingTop: 8,
+    paddingBottom: 200,
   },
-  stepHeader: {
+
+  // Header
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: 3,
-    borderBottomColor: '#1D5FBF',
-    paddingBottom: 8,
+    paddingVertical: 8,
   },
-  backIcon: {
-    fontSize: 24,
-    color: '#334155',
-    width: 30,
-  },
-  stepTextWrap: {
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  stepLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: '#1D5FBF',
+  headerCenter: {
+    flex: 1,
+    marginLeft: 12,
   },
-  helpIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#64748B',
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-  },
-  title: {
-    marginTop: 2,
-    fontSize: 26,
+  headerTitle: {
+    fontSize: 22,
     fontWeight: '800',
     color: '#0F172A',
   },
-  deviceCard: {
-    marginTop: 14,
-    padding: 12,
-    borderRadius: 14,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#D5DFEC',
+  headerSubtitle: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  helpButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  // Progress Bar
+  progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 16,
   },
-  deviceThumb: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
+  progressTrack: {
+    flex: 1,
+    height: 6,
     backgroundColor: '#E2E8F0',
+    borderRadius: 3,
+  },
+  progressFill: {
+    width: '87.5%',
+    height: '100%',
+    backgroundColor: '#0F4FA8',
+    borderRadius: 3,
+  },
+  progressStep: {
+    marginLeft: 10,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0F4FA8',
+  },
+
+  // Device Card
+  deviceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#0F4FA8',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  deviceIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#EAF2FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  deviceThumbIcon: {
-    fontSize: 20,
-  },
-  deviceInfo: {
-    marginLeft: 12,
+  deviceDetails: {
     flex: 1,
+    marginLeft: 14,
   },
   deviceName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
   },
-  deviceQuote: {
-    marginTop: 4,
+  deviceStorage: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#1D5FBF',
+    color: '#64748B',
+    marginTop: 2,
   },
-  sectionTitleRow: {
-    marginTop: 16,
+  priceBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  priceValue: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#16A34A',
+  },
+
+  // Section Header
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  sectionIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#0F4FA8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionTitle: {
-    fontSize: 18,
+    marginLeft: 10,
+    fontSize: 17,
     fontWeight: '700',
     color: '#0F172A',
   },
-  addressForm: {
-    marginTop: 10,
+
+  // Address Card
+  addressCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#D5DFEC',
+    borderRadius: 16,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  inputWrap: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+  inputGroup: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
-  inputLabel: {
+  inputGroupSm: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  floatingLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#94A3B8',
-    marginBottom: 3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
   },
-  input: {
-    fontSize: 14,
+  floatingInput: {
+    fontSize: 15,
     fontWeight: '600',
     color: '#0F172A',
     padding: 0,
   },
+  readOnlyValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#64748B',
+    paddingTop: 16,
+  },
   inputDivider: {
     height: 1,
     backgroundColor: '#F1F5F9',
-    marginHorizontal: 14,
+    marginHorizontal: 16,
   },
-  inputRowTwo: {
+  rowInputs: {
     flexDirection: 'row',
-    gap: 0,
   },
-  cityReadOnly: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  dateRow: {
-    marginTop: 10,
-    gap: 8,
-    paddingRight: 8,
+
+  // Date Cards
+  dateScroll: {
+    gap: 10,
+    paddingRight: 16,
   },
   dateCard: {
-    width: 62,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#D5DFEC',
-    backgroundColor: '#F8FAFC',
+    width: 68,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
-    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   dateCardActive: {
-    backgroundColor: '#1D5FBF',
-    borderColor: '#1D5FBF',
+    backgroundColor: '#0F4FA8',
+    borderColor: '#0F4FA8',
+    shadowColor: '#0F4FA8',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  selectedCheck: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#16A34A',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dateMonth: {
-    color: '#64748B',
+    color: '#94A3B8',
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -421,121 +595,180 @@ const styles = StyleSheet.create({
     color: '#DBEAFE',
   },
   dateDay: {
-    marginTop: 2,
+    marginTop: 4,
     color: '#0F172A',
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '800',
   },
   dateDayActive: {
-    color: COLORS.WHITE,
+    color: '#FFFFFF',
   },
   dateWeek: {
-    marginTop: 2,
+    marginTop: 4,
     color: '#64748B',
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '600',
   },
   dateWeekActive: {
     color: '#DBEAFE',
   },
+
+  // Time Cards
   timeGrid: {
-    marginTop: 14,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    justifyContent: 'space-between',
   },
   timeCard: {
-    width: '48.5%',
-    borderRadius: 10,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#D5DFEC',
-    paddingVertical: 12,
+    width: '48%',
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 6,
+    elevation: 1,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 10,
   },
   timeCardActive: {
-    borderColor: '#1D5FBF',
-    backgroundColor: '#EAF2FF',
+    borderColor: '#0F4FA8',
+    backgroundColor: '#F0F7FF',
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOuterActive: {
+    borderColor: '#0F4FA8',
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#0F4FA8',
   },
   timeText: {
+    flex: 1,
     fontSize: 13,
-    fontWeight: '700',
-    color: '#334155',
+    fontWeight: '600',
+    color: '#475569',
   },
   timeTextActive: {
-    color: '#1D5FBF',
+    color: '#0F4FA8',
   },
-  noteCard: {
-    marginTop: 16,
-    borderRadius: 10,
+
+  // Trust Section
+  trustSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 24,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#D5DFEC',
-    backgroundColor: '#F8FAFC',
-    padding: 12,
+    borderColor: '#E2E8F0',
+  },
+  trustBadge: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  trustText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+  },
+
+  // Info Card
+  infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 8,
+    marginTop: 16,
+    padding: 14,
+    backgroundColor: '#F0F7FF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    gap: 10,
   },
-  noteText: {
+  infoText: {
     flex: 1,
-    color: '#334155',
     fontSize: 12,
+    color: '#475569',
     lineHeight: 18,
   },
+
+  // Bottom Bar
   bottomBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#D5DFEC',
-    backgroundColor: '#F8FAFC',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    gap: 16,
+  },
+  bottomLeft: {
+    flex: 1,
   },
   bottomLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: '#94A3B8',
+    letterSpacing: 0.5,
   },
-  bottomValue: {
-    marginTop: 2,
-    color: '#0F172A',
-    fontSize: 36,
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bottomPrice: {
+    fontSize: 28,
     fontWeight: '900',
+    color: '#0F172A',
     letterSpacing: -0.5,
   },
-  badgeWrap: {
-    backgroundColor: '#DCFCE7',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  badgeText: {
-    color: '#16A34A',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  nextButton: {
-    marginHorizontal: 16,
-    marginBottom: 16,
+  confirmButton: {
     backgroundColor: '#0F4FA8',
+    paddingHorizontal: 24,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 14,
+    flexDirection: 'row',
     alignItems: 'center',
-    elevation: 2,
+    shadowColor: '#0F4FA8',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  nextButtonPressed: {
-    transform: [{ scale: 0.985 }],
-    opacity: 0.92,
+  confirmButtonPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
   },
-  cardPressed: {
-    opacity: 0.94,
+  confirmButtonLoading: {
+    backgroundColor: '#94A3B8',
+    shadowOpacity: 0,
   },
-  nextText: {
-    color: '#FFFFFF',
+  confirmText: {
+    fontSize: 15,
     fontWeight: '800',
-    fontSize: 16,
+    color: '#FFFFFF',
+  },
+  confirmArrow: {
+    marginLeft: 8,
+  },
+
+  // Common
+  cardPressed: {
+    opacity: 0.92,
   },
 });
 

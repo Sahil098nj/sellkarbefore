@@ -4,16 +4,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { COLORS } from '../constants';
 import type { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
-import { useVariantsQuery, Variant } from '../api/productsApi';
+import { useLiveVariantsQuery, Variant } from '../api/productsApi';
 
 type VariantSelectionScreenRouteProp = RouteProp<RootStackParamList, 'VariantSelection'>;
 
 const VariantSelectionScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<VariantSelectionScreenRouteProp>();
-  const { modelId, modelName, brandName } = route.params;
+  const { modelId, modelName, brandName, category } = route.params ?? {};
 
-  const variantsQuery = useVariantsQuery(modelId);
+  const variantsQuery = useLiveVariantsQuery(modelId);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
 
   const variants: Variant[] = [...(variantsQuery.data ?? [])].sort((left, right) => {
@@ -98,7 +98,7 @@ const VariantSelectionScreen: React.FC = () => {
               style={[styles.card, isActive && styles.cardActive]}
               onPress={() => {
                 setSelectedVariant(variant);
-                navigation.navigate('CitySelection', { variant, modelName });
+                navigation.navigate('CitySelection', { variant, modelName, brandName, category });
               }}
             >
               <Text style={[styles.cardText, isActive && styles.cardTextActive]}>

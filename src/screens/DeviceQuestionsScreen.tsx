@@ -13,14 +13,14 @@ type YesNoState = boolean | null;
 const DeviceQuestionsScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<DeviceQuestionsScreenRouteProp>();
-  const { variant, modelName, city } = route.params;
+  const { variant, modelName, city, brandName, category } = route.params ?? {};
 
   const [canCall, setCanCall] = useState<YesNoState>(null);
   const [touchOk, setTouchOk] = useState<YesNoState>(null);
   const [screenOriginal, setScreenOriginal] = useState<YesNoState>(null);
   const [batteryOk, setBatteryOk] = useState<YesNoState>(null);
 
-  const normalizedModel = modelName.toLowerCase();
+  const normalizedModel = (modelName ?? '').toLowerCase();
   const needsBatteryQuestion = /iphone|ipad|ipod/.test(normalizedModel);
   const isAndroidRuntime = Platform.OS === 'android';
 
@@ -157,6 +157,9 @@ const DeviceQuestionsScreen: React.FC = () => {
             variant,
             city,
             questions: { canCall, touchOk, screenOriginal, batteryOk },
+            modelName,
+            brandName,
+            category,
           });
         }}
       >

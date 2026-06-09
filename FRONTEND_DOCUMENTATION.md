@@ -1214,7 +1214,134 @@ type ScreenRouteProp = RouteProp<RootStackParamList, 'ScreenName'>;
 
 ---
 
-**Last Updated:** March 22, 2026  
-**Version:** 1.0.0  
+## Database Schema (Supabase/PostgreSQL)
+
+### Overview
+
+Leads are stored in Supabase (PostgreSQL) across two main tables. There is **no automatic linking** between tables — both exist independently and are connected only via the `converted_to_pickup` boolean flag on the leads table.
+
+### 1. public.leads — Primary Lead Storage
+
+Created when user completes OTP verification. Enriched during sell flow (brand/model/condition).
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| customer_name | TEXT | Customer's full name |
+| phone_number | TEXT | Phone number |
+| verified_phone | TEXT | Verified phone number |
+| is_phone_verified | BOOLEAN | Whether phone is verified |
+| brand_name | TEXT | For quick leads without full device selection |
+| device_id | UUID | FK to devices table |
+| variant_id | UUID | FK to variants table |
+| city_id | UUID | FK to cities table |
+| lead_status | TEXT | Status: 'rnr' (default), 'not-interested', 'scheduled', 'reschedule' |
+| lead_notes | TEXT | Plain text notes (NOT JSON) |
+| final_price | NUMERIC | Final price after condition assessment |
+| converted_to_pickup | BOOLEAN | Flag indicating pickup request created |
+| has_bill | BOOLEAN | Has original bill |
+| has_box | BOOLEAN | Has original box |
+| has_charger | BOOLEAN | Has charger |
+| device_powers_on | BOOLEAN | Device powers on |
+| display_condition | TEXT | Display condition |
+| body_condition | TEXT | Body condition |
+| can_make_calls | BOOLEAN | Can make/receive calls |
+| is_touch_working | BOOLEAN | Touch screen working |
+| is_screen_original | BOOLEAN | Original screen |
+| is_battery_healthy | BOOLEAN | Battery healthy |
+| overall_condition | TEXT | Overall condition assessment |
+| age_group | TEXT | Device age group |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+
+**Important Notes:**
+- `lead_notes` is TEXT (plain text), NOT JSONB
+- No `customer_id` field (no customer_profiles table linkage)
+- No `source_channel` field
+- No `pickup_request_id` field
+
+### 2. public.pickup_requests — Created When Pickup is Scheduled
+
+Created separately when customer schedules a pickup. Not linked to leads table via foreign key.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_phone | TEXT | Phone number |
+| customer_name | TEXT | Customer's full name |
+| device_id | UUID | FK to devices table |
+| variant_id | UUID | FK to variants table |
+| city_id | UUID | FK to cities table |
+| address | TEXT | Pickup address |
+| pincode | TEXT | Pin code |
+| pickup_date | DATE | Scheduled pickup date |
+| pickup_time | TEXT | Scheduled pickup time slot |
+| status | TEXT | Pickup status |
+| final_price | NUMERIC | Final price |
+| All condition fields | BOOLEAN/TEXT | Same condition fields as leads |
+| created_at | TIMESTAMPTZ | Creation timestamp |
+
+**Important Notes:**
+- No `order_id` field
+- No `lead_id` field
+- No `customer_id` field
+- No `lead_status` field (pickup_requests use `status`, not `lead_status`)
+- No `source_channel` field
+
+### 3. Data Flow
+
+```
+OTP Verification → Lead Created in public.leads
+       ↓
+Sell Flow → Brand/Model/Condition Selected → Lead Enriched
+       ↓
+Manual Action → converted_to_pickup = true
+       ↓
+Separate Pickup Request Created in public.pickup_requests
+       ↓
+Both tables exist independently (no FK linkage)
+```
+
+### 4. Related Tables (Lookup/Reference)
+
+| Table | Purpose |
+|-------|---------|
+| brands | Device brand information |
+| devices | Device models |
+| variants | Device variants (RAM/Storage) |
+| cities | City information for pickup |
+
+### 5. Index Recommendations
+
+For `public.leads`:
+```sql
+-- Phone number lookups
+CREATE INDEX idx_leads_phone ON public.leads (phone_number);
+
+-- Status filtering
+CREATE INDEX idx_leads_status ON public.leads (lead_status);
+
+-- Converted leads
+CREATE INDEX idx_leads_converted ON public.leads (converted_to_pickup);
+
+-- Time-based queries
+CREATE INDEX idx_leads_created ON public.leads (created_at DESC);
+```
+
+For `public.pickup_requests`:
+```sql
+-- Status filtering
+CREATE INDEX idx_pickup_status ON public.pickup_requests (status);
+
+-- Time-based queries
+CREATE INDEX idx_pickup_created ON public.pickup_requests (created_at DESC);
+
+-- Phone lookups
+CREATE INDEX idx_pickup_phone ON public.pickup_requests (user_phone);
+```
+
+---
+
+**Last Updated:** May 15, 2026  
+**Version:** 1.1.0  
 **React Native:** 0.84.0  
-**TypeScript:** Latest
+**TypeScript:** Latest  

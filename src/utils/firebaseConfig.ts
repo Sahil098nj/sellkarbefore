@@ -6,6 +6,9 @@
 
 import auth from '@react-native-firebase/auth';
 
+// Keep app verification enabled so debug builds request real Firebase SMS OTPs.
+auth().settings.appVerificationDisabledForTesting = false;
+
 export const firebaseAuth = auth;
 
 export const initializeFirebaseMessaging = async () => {

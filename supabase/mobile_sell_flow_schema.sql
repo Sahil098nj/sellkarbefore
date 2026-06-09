@@ -1,103 +1,94 @@
--- Sellkar mobile sell-flow schema alignment
--- Reuse and extend existing customer_profiles, leads, and pickup_requests tables.
+-- Sellkar mobile sell-flow schema documentation
+-- Documents the existing public.leads and public.pickup_requests tables.
+-- NOTE: This file documents the schema, NOT a migration script.
+-- These tables already exist with their defined structure.
 
-begin;
+-- ============================================================
+-- CORRECT SCHEMA (Do NOT add these fields - they don't exist)
+-- ============================================================
+-- DO NOT add: source_channel, customer_id, pickup_request_id,
+-- order_id, lead_status to these tables. They don't exist.
+-- ============================================================
 
-create extension if not exists pgcrypto;
+-- public.leads — Primary Lead Storage
+-- Created when user completes OTP verification.
+-- Enriched during sell flow (brand/model/condition).
+-- lead_notes is TEXT (plain text), NOT JSONB.
 
-create table if not exists public.customer_profiles (
-  id uuid primary key default gen_random_uuid(),
-  name text,
-  phone_number text not null unique,
-  city text,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- public.pickup_requests — Created When Pickup is Scheduled
+-- Created separately when customer schedules a pickup.
+-- Not linked to leads table via foreign key.
+-- Both tables exist independently.
 
-alter table public.customer_profiles
-  add column if not exists name text,
-  add column if not exists phone_number text,
-  add column if not exists city text,
-  add column if not exists created_at timestamptz default now(),
-  add column if not exists updated_at timestamptz default now();
+-- ============================================================
+-- INDEX RECOMMENDATIONS (Run these if needed)
+-- ============================================================
 
-create unique index if not exists customer_profiles_phone_number_uidx
-  on public.customer_profiles (phone_number);
+-- Indexes for public.leads
+-- Phone number lookups
+CREATE INDEX IF NOT EXISTS idx_leads_phone ON public.leads (phone_number);
 
-create table if not exists public.leads (
-  id uuid primary key default gen_random_uuid(),
-  phone_number text not null,
-  name text,
-  device_interest text,
-  source text not null default 'app',
-  status text not null default 'lead',
-  created_at timestamptz not null default now()
-);
+-- Verified phone lookups
+CREATE INDEX IF NOT EXISTS idx_leads_verified_phone ON public.leads (verified_phone);
 
-alter table public.leads
-  add column if not exists phone_number text,
-  add column if not exists name text,
-  add column if not exists device_interest text,
-  add column if not exists source text default 'app',
-  add column if not exists status text default 'lead',
-  add column if not exists created_at timestamptz default now();
+-- Status filtering
+CREATE INDEX IF NOT EXISTS idx_leads_status ON public.leads (lead_status);
 
-create index if not exists leads_phone_created_idx
-  on public.leads (phone_number, created_at desc);
+-- Converted leads
+CREATE INDEX IF NOT EXISTS idx_leads_converted ON public.leads (converted_to_pickup);
 
-create table if not exists public.pickup_requests (
-  id uuid primary key default gen_random_uuid(),
-  customer_id uuid not null references public.customer_profiles(id) on delete cascade,
-  device_name text not null,
-  device_variant text,
-  condition_answers jsonb not null default '{}'::jsonb,
-  price_final numeric(12,2) not null,
-  pickup_address text not null,
-  city text not null,
-  status text not null default 'scheduled',
-  created_at timestamptz not null default now()
-);
+-- Time-based queries
+CREATE INDEX IF NOT EXISTS idx_leads_created_at ON public.leads (created_at DESC);
 
-alter table public.pickup_requests
-  add column if not exists customer_id uuid references public.customer_profiles(id) on delete cascade,
-  add column if not exists device_name text,
-  add column if not exists device_variant text,
-  add column if not exists condition_answers jsonb default '{}'::jsonb,
-  add column if not exists price_final numeric(12,2),
-  add column if not exists pickup_address text,
-  add column if not exists city text,
-  add column if not exists status text default 'scheduled',
-  add column if not exists created_at timestamptz default now();
+-- Indexes for public.pickup_requests
+-- Status filtering
+CREATE INDEX IF NOT EXISTS idx_pickup_status ON public.pickup_requests (status);
 
-create index if not exists pickup_requests_customer_created_idx
-  on public.pickup_requests (customer_id, created_at desc);
+-- Time-based queries
+CREATE INDEX IF NOT EXISTS idx_pickup_created_at ON public.pickup_requests (created_at DESC);
 
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_constraint
-    where conname = 'pickup_requests_status_chk'
-  ) then
-    alter table public.pickup_requests
-      add constraint pickup_requests_status_chk
-      check (status in ('scheduled', 'picked', 'completed'));
-  end if;
-end
-$$;
+-- Phone lookups
+CREATE INDEX IF NOT EXISTS idx_pickup_phone ON public.pickup_requests (user_phone);
 
-alter table public.customer_login_history
-  add column if not exists customer_id uuid references public.customer_profiles(id) on delete set null,
-  add column if not exists phone_number text,
-  add column if not exists event text,
-  add column if not exists source text,
-  add column if not exists created_at timestamptz default now();
+-- ============================================================
+-- TABLE STRUCTURE DOCUMENTATION
+-- ============================================================
 
-alter table public.customer_activity_history
-  add column if not exists customer_id uuid references public.customer_profiles(id) on delete cascade,
-  add column if not exists action text,
-  add column if not exists metadata jsonb default '{}'::jsonb,
-  add column if not exists source text,
-  add column if not exists created_at timestamptz default now();
+/*
+public.leads columns (existing):
+- id (UUID, PK)
+- customer_name (TEXT)
+- phone_number (TEXT)
+- verified_phone (TEXT)
+- is_phone_verified (BOOLEAN)
+- brand_name (TEXT)
+- device_id (UUID, FK to devices)
+- variant_id (UUID, FK to variants)
+- city_id (UUID, FK to cities)
+- lead_status (TEXT) — values: 'rnr' (default), 'not-interested', 'scheduled', 'reschedule'
+- lead_notes (TEXT) — plain text, NOT JSONB
+- final_price (NUMERIC)
+- converted_to_pickup (BOOLEAN)
+- has_bill, has_box, has_charger (BOOLEAN)
+- device_powers_on (BOOLEAN)
+- display_condition, body_condition (TEXT)
+- can_make_calls, is_touch_working, is_screen_original, is_battery_healthy (BOOLEAN)
+- overall_condition, age_group (TEXT)
+- created_at (TIMESTAMPTZ)
 
-commit;
+public.pickup_requests columns (existing):
+- id (UUID, PK)
+- user_phone (TEXT)
+- customer_name (TEXT)
+- device_id (UUID, FK to devices)
+- variant_id (UUID, FK to variants)
+- city_id (UUID, FK to cities)
+- address (TEXT)
+- pincode (TEXT)
+- pickup_date (DATE)
+- pickup_time (TEXT)
+- status (TEXT)
+- final_price (NUMERIC)
+- All condition fields (same as leads)
+- created_at (TIMESTAMPTZ)
+*/

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -13,7 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useRequestOtpMutation, useVerifyOtpMutation } from '../api';
+import {
+  useRequestOtpMutation,
+  useVerifyOtpMutation,
+} from '../api';
 import { useAuthStore } from '../store';
 import { COLORS } from '../constants';
 import type { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
@@ -23,8 +26,18 @@ type AuthScreenRouteProp = RouteProp<RootStackParamList, 'Auth'>;
 const AuthScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<AuthScreenRouteProp>();
-  const { variant, conditionData, accessoriesData } = route.params;
+  const {
+    variant,
+    conditionData,
+    accessoriesData,
+    questions,
+    city: routeCity,
+    modelName,
+    brandName,
+  } = route.params ?? {};
   const { setSession } = useAuthStore();
+
+  const isSellFlow = !!variant;
 
   const requestOtpMutation = useRequestOtpMutation();
   const verifyOtpMutation = useVerifyOtpMutation();
@@ -33,13 +46,22 @@ const AuthScreen: React.FC = () => {
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [city, setCity] = useState('');
+  const [city, setCity] = useState(routeCity ?? '');
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [error, setError] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
 
   // Only allow digits in phone input, max 10 digits
   const sanitizedPhone = useMemo(() => phone.replace(/\D/g, '').slice(0, 10), [phone]);
+
+  // Timer effect for resend OTP cooldown
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
 
   const canSendOtp = name.trim().length >= 2 && sanitizedPhone.length === 10;
   const canVerifyOtp = canSendOtp && otp.trim().length === 6;
@@ -67,9 +89,32 @@ const AuthScreen: React.FC = () => {
       await requestOtpMutation.mutateAsync(sanitizedPhone);
       setIsOtpSent(true);
       setError('');
+      setResendTimer(30); // 30 second cooldown
+      setTimeout(() => otpInputRef.current?.focus(), 120);
     } catch (e) {
       setError(getErrorMessage(e, 'Unable to send OTP. Please try again.'));
     }
+  };
+
+  const resendOtp = async () => {
+    if (resendTimer > 0) return;
+
+    try {
+      setOtp(''); // Clear previous OTP
+      await requestOtpMutation.mutateAsync(sanitizedPhone);
+      setResendTimer(30); // 30 second cooldown
+      setError('');
+      setTimeout(() => otpInputRef.current?.focus(), 120);
+    } catch (e) {
+      setError(getErrorMessage(e, 'Unable to resend OTP. Please try again.'));
+    }
+  };
+
+  const changePhoneNumber = () => {
+    setIsOtpSent(false);
+    setOtp('');
+    setError('');
+    setResendTimer(0);
   };
 
   const verifyOtp = async () => {
@@ -83,17 +128,35 @@ const AuthScreen: React.FC = () => {
         phoneNumber: sanitizedPhone,
         otp: otp.trim(),
         name: name.trim(),
-        city: city.trim() || undefined,
-        deviceInterest: variant?.model_name ?? undefined,
+        city: city.trim() || routeCity || undefined,
+        deviceInterest: variant?.model_name ?? modelName ?? undefined,
+        variantId: variant?.id,
+        deviceId: variant?.device_id,
+        brandName,
+        questions,
+        conditionData,
+        accessoriesData,
       });
 
       setSession(session);
       setError('');
-      navigation.navigate('PriceUnlock', {
-        variant,
-        conditionData,
-        accessoriesData,
-      });
+      if (isSellFlow) {
+        navigation.navigate('PriceUnlock', {
+          variant,
+          conditionData,
+          accessoriesData,
+          questions,
+          city: city.trim() || routeCity || undefined,
+          modelName,
+          brandName,
+          category: route.params && 'category' in route.params ? (route.params as any).category : undefined,
+        });
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      }
     } catch (e) {
       setError(getErrorMessage(e, 'OTP verification failed.'));
     }
@@ -122,9 +185,13 @@ const AuthScreen: React.FC = () => {
           </View>
 
           <View style={styles.authCard}>
-            <Text style={styles.title}>Verify to unlock your final price</Text>
+            <Text style={styles.title}>
+              {isSellFlow ? 'Verify to unlock your final price' : 'Login to your account'}
+            </Text>
             <Text style={styles.subtitle}>
-              Enter your details and complete OTP verification to continue.
+              {isSellFlow
+                ? 'Enter your details and complete OTP verification to continue.'
+                : 'Use your mobile number to continue. Login and registration happen in one OTP step.'}
             </Text>
 
             <TextInput
@@ -164,6 +231,19 @@ const AuthScreen: React.FC = () => {
             </View>
 
             {isOtpSent && (
+              <Pressable
+                style={({ pressed }: { pressed: boolean }) => [
+                  styles.changeNumberButton,
+                  pressed && styles.changeNumberButtonPressed,
+                ]}
+                onPress={changePhoneNumber}
+              >
+                <MaterialCommunityIcons name="pencil" size={14} color="#0F4FA8" />
+                <Text style={styles.changeNumberText}>Change Number</Text>
+              </Pressable>
+            )}
+
+            {isOtpSent && (
               <>
                 <Text style={styles.otpLabel}>Enter OTP</Text>
                 <Pressable
@@ -187,6 +267,36 @@ const AuthScreen: React.FC = () => {
                   maxLength={6}
                   style={styles.hiddenInput}
                 />
+
+                <Pressable
+                  style={({ pressed }: { pressed: boolean }) => [
+                    styles.resendButton,
+                    resendTimer > 0 || requestOtpMutation.isPending
+                      ? styles.resendButtonDisabled
+                      : null,
+                    pressed && resendTimer === 0 ? styles.resendButtonPressed : null,
+                  ]}
+                  disabled={resendTimer > 0 || requestOtpMutation.isPending}
+                  onPress={resendOtp}
+                >
+                  <MaterialCommunityIcons
+                    name="refresh"
+                    size={16}
+                    color={resendTimer > 0 || requestOtpMutation.isPending ? '#94A3B8' : '#0F4FA8'}
+                  />
+                  <Text
+                    style={[
+                      styles.resendText,
+                      (resendTimer > 0 || requestOtpMutation.isPending) && styles.resendTextDisabled,
+                    ]}
+                  >
+                    {requestOtpMutation.isPending
+                      ? 'Sending...'
+                      : resendTimer > 0
+                        ? `Resend OTP in ${resendTimer}s`
+                        : 'Resend OTP'}
+                  </Text>
+                </Pressable>
               </>
             )}
 
@@ -216,7 +326,7 @@ const AuthScreen: React.FC = () => {
                   ? 'Please wait...'
                   : isOtpSent
                     ? 'Verify OTP'
-                    : 'Get OTP'}
+                    : 'Continue with OTP'}
               </Text>
             </Pressable>
 
@@ -332,6 +442,23 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  changeNumberButton: {
+    marginTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 6,
+  },
+  changeNumberButtonPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.7,
+  },
+  changeNumberText: {
+    color: '#0F4FA8',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   digitGrid: {
     marginTop: 10,
     flexDirection: 'row',
@@ -369,6 +496,28 @@ const styles = StyleSheet.create({
     opacity: 0,
     width: 1,
     height: 1,
+  },
+  resendButton: {
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+  },
+  resendButtonDisabled: {
+    opacity: 0.5,
+  },
+  resendButtonPressed: {
+    transform: [{ scale: 0.97 }],
+  },
+  resendText: {
+    color: '#0F4FA8',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  resendTextDisabled: {
+    color: '#94A3B8',
   },
   hint: {
     marginTop: 8,

@@ -1,26 +1,26 @@
 {
-  "root": "/Users/sahilsmbp/Desktop/seellakr before",
-  "reactNativePath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native",
+  "root": "/Users/sahilsmbp/Desktop/seellakrbefore",
+  "reactNativePath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native",
   "reactNativeVersion": "0.84",
   "dependencies": {
     "@react-native-async-storage/async-storage": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-async-storage/async-storage",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-async-storage/async-storage",
       "name": "@react-native-async-storage/async-storage",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec",
           "version": "2.2.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-async-storage/async-storage/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-async-storage/async-storage/android",
           "packageImportPath": "import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;",
           "packageInstance": "new AsyncStoragePackage()",
           "buildTypes": [],
           "libraryName": "rnasyncstorage",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -29,11 +29,11 @@
       }
     },
     "@react-native-firebase/app": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/app",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/app",
       "name": "@react-native-firebase/app",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/app/RNFBApp.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/app/RNFBApp.podspec",
           "version": "23.8.8",
           "configurations": [],
           "scriptPhases": [
@@ -48,12 +48,12 @@
           ]
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/app/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/app/android",
           "packageImportPath": "import io.invertase.firebase.app.ReactNativeFirebaseAppPackage;",
           "packageInstance": "new ReactNativeFirebaseAppPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/app/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/app/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -62,22 +62,22 @@
       }
     },
     "@react-native-firebase/auth": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/auth",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/auth",
       "name": "@react-native-firebase/auth",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/auth/RNFBAuth.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/auth/RNFBAuth.podspec",
           "version": "23.8.8",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/auth/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/auth/android",
           "packageImportPath": "import io.invertase.firebase.auth.ReactNativeFirebaseAuthPackage;",
           "packageInstance": "new ReactNativeFirebaseAuthPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/auth/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/auth/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -86,22 +86,22 @@
       }
     },
     "@react-native-firebase/messaging": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/messaging",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/messaging",
       "name": "@react-native-firebase/messaging",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/messaging/RNFBMessaging.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/messaging/RNFBMessaging.podspec",
           "version": "23.8.8",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/messaging/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/messaging/android",
           "packageImportPath": "import io.invertase.firebase.messaging.ReactNativeFirebaseMessagingPackage;",
           "packageInstance": "new ReactNativeFirebaseMessagingPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/@react-native-firebase/messaging/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/@react-native-firebase/messaging/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -110,23 +110,23 @@
       }
     },
     "react-native-config": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-config",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-config",
       "name": "react-native-config",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-config/react-native-config.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-config/react-native-config.podspec",
           "version": "1.6.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-config/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-config/android",
           "packageImportPath": "import com.lugg.RNCConfig.RNCConfigPackage;",
           "packageInstance": "new RNCConfigPackage()",
           "buildTypes": [],
           "libraryName": "RNCConfigSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-config/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-config/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -135,22 +135,22 @@
       }
     },
     "react-native-fast-image": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-fast-image",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-fast-image",
       "name": "react-native-fast-image",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-fast-image/RNFastImage.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-fast-image/RNFastImage.podspec",
           "version": "8.6.3",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-fast-image/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-fast-image/android",
           "packageImportPath": "import com.dylanvann.fastimage.FastImageViewPackage;",
           "packageInstance": "new FastImageViewPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-fast-image/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-fast-image/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -159,17 +159,17 @@
       }
     },
     "react-native-gesture-handler": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-gesture-handler",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-gesture-handler",
       "name": "react-native-gesture-handler",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-gesture-handler/RNGestureHandler.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-gesture-handler/RNGestureHandler.podspec",
           "version": "2.30.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-gesture-handler/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-gesture-handler/android",
           "packageImportPath": "import com.swmansion.gesturehandler.RNGestureHandlerPackage;",
           "packageInstance": "new RNGestureHandlerPackage()",
           "buildTypes": [],
@@ -178,7 +178,7 @@
             "RNGestureHandlerButtonComponentDescriptor",
             "RNGestureHandlerRootViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -187,23 +187,23 @@
       }
     },
     "react-native-keychain": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-keychain",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-keychain",
       "name": "react-native-keychain",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-keychain/RNKeychain.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-keychain/RNKeychain.podspec",
           "version": "10.0.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-keychain/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-keychain/android",
           "packageImportPath": "import com.oblador.keychain.KeychainPackage;",
           "packageInstance": "new KeychainPackage()",
           "buildTypes": [],
           "libraryName": "RNKeychainSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-keychain/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-keychain/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -212,22 +212,22 @@
       }
     },
     "react-native-linear-gradient": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-linear-gradient",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-linear-gradient",
       "name": "react-native-linear-gradient",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-linear-gradient/BVLinearGradient.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-linear-gradient/BVLinearGradient.podspec",
           "version": "2.8.3",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-linear-gradient/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-linear-gradient/android",
           "packageImportPath": "import com.BV.LinearGradient.LinearGradientPackage;",
           "packageInstance": "new LinearGradientPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-linear-gradient/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-linear-gradient/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -236,23 +236,23 @@
       }
     },
     "react-native-reanimated": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-reanimated",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-reanimated",
       "name": "react-native-reanimated",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-reanimated/RNReanimated.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-reanimated/RNReanimated.podspec",
           "version": "3.10.1",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-reanimated/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-reanimated/android",
           "packageImportPath": "import com.swmansion.reanimated.ReanimatedPackage;",
           "packageInstance": "new ReanimatedPackage()",
           "buildTypes": [],
           "libraryName": "rnreanimated",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -261,17 +261,17 @@
       }
     },
     "react-native-safe-area-context": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-safe-area-context",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-safe-area-context",
       "name": "react-native-safe-area-context",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-safe-area-context/react-native-safe-area-context.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-safe-area-context/react-native-safe-area-context.podspec",
           "version": "5.6.2",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-safe-area-context/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-safe-area-context/android",
           "packageImportPath": "import com.th3rdwave.safeareacontext.SafeAreaContextPackage;",
           "packageInstance": "new SafeAreaContextPackage()",
           "buildTypes": [],
@@ -280,7 +280,7 @@
             "RNCSafeAreaProviderComponentDescriptor",
             "RNCSafeAreaViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -289,17 +289,17 @@
       }
     },
     "react-native-screens": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-screens",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-screens",
       "name": "react-native-screens",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-screens/RNScreens.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-screens/RNScreens.podspec",
           "version": "4.23.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-screens/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-screens/android",
           "packageImportPath": "import com.swmansion.rnscreens.RNScreensPackage;",
           "packageInstance": "new RNScreensPackage()",
           "buildTypes": [],
@@ -319,7 +319,7 @@
             "RNSBottomTabsComponentDescriptor",
             "RNSSafeAreaViewComponentDescriptor"
           ],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-screens/android/src/main/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -328,22 +328,22 @@
       }
     },
     "react-native-splash-screen": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-splash-screen",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-splash-screen",
       "name": "react-native-splash-screen",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-splash-screen/react-native-splash-screen.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-splash-screen/react-native-splash-screen.podspec",
           "version": "3.3.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-splash-screen/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-splash-screen/android",
           "packageImportPath": "import org.devio.rn.splashscreen.SplashScreenReactPackage;",
           "packageInstance": "new SplashScreenReactPackage()",
           "buildTypes": [],
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-splash-screen/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-splash-screen/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -352,23 +352,23 @@
       }
     },
     "react-native-vector-icons": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-vector-icons",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-vector-icons",
       "name": "react-native-vector-icons",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-vector-icons/RNVectorIcons.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-vector-icons/RNVectorIcons.podspec",
           "version": "10.3.0",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-vector-icons/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-vector-icons/android",
           "packageImportPath": "import com.oblador.vectoricons.VectorIconsPackage;",
           "packageInstance": "new VectorIconsPackage()",
           "buildTypes": [],
           "libraryName": "RNVectorIconsSpec",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-vector-icons/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -377,23 +377,23 @@
       }
     },
     "react-native-worklets": {
-      "root": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-worklets",
+      "root": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-worklets",
       "name": "react-native-worklets",
       "platforms": {
         "ios": {
-          "podspecPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-worklets/RNWorklets.podspec",
+          "podspecPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-worklets/RNWorklets.podspec",
           "version": "0.7.4",
           "configurations": [],
           "scriptPhases": []
         },
         "android": {
-          "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-worklets/android",
+          "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-worklets/android",
           "packageImportPath": "import com.swmansion.worklets.WorkletsPackage;",
           "packageInstance": "new WorkletsPackage()",
           "buildTypes": [],
           "libraryName": "rnworklets",
           "componentDescriptors": [],
-          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakr before/node_modules/react-native-worklets/android/build/generated/source/codegen/jni/CMakeLists.txt",
+          "cmakeListsPath": "/Users/sahilsmbp/Desktop/seellakrbefore/node_modules/react-native-worklets/android/build/generated/source/codegen/jni/CMakeLists.txt",
           "cxxModuleCMakeListsModuleName": null,
           "cxxModuleCMakeListsPath": null,
           "cxxModuleHeaderName": null,
@@ -564,7 +564,7 @@
         {
           "name": "--path <path>",
           "description": "Path to the React Native project root.",
-          "default": "/Users/sahilsmbp/Desktop/seellakr before/android"
+          "default": "/Users/sahilsmbp/Desktop/seellakrbefore/android"
         },
         {
           "name": "--platform <string>",
@@ -864,7 +864,7 @@
   "assets": [],
   "project": {
     "ios": {
-      "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/ios",
+      "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/ios",
       "xcodeProject": {
         "name": "SellkarIndia.xcodeproj",
         "path": ".",
@@ -873,7 +873,7 @@
       "assets": []
     },
     "android": {
-      "sourceDir": "/Users/sahilsmbp/Desktop/seellakr before/android",
+      "sourceDir": "/Users/sahilsmbp/Desktop/seellakrbefore/android",
       "appName": "app",
       "packageName": "com.sellkarindia",
       "applicationId": "com.sellkarindia",

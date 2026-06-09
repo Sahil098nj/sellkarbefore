@@ -1,22 +1,69 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useLiveWarrantyPricesQuery, useLiveLaptopPricesQuery, useSyncLeadQuoteMutation } from '../api';
+import { calculateFinalPrice, calculateLaptopPrice, type ConditionData, type LaptopConditionData } from '../utils/priceCalculation';
 import { COLORS } from '../constants';
 import type { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
+import { useAuthStore } from '../store';
 
 type PriceUnlockScreenRouteProp = RouteProp<RootStackParamList, 'PriceUnlock'>;
 
 const PriceUnlockScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
   const route = useRoute<PriceUnlockScreenRouteProp>();
-  const { variant, conditionData, accessoriesData } = route.params;
+  const { variant, conditionData, accessoriesData, questions, city, modelName, brandName, category } = route.params ?? {};
+  const user = useAuthStore((state) => state.user);
+  const setLeadId = useAuthStore((state) => state.setLeadId);
+  const syncLeadQuoteMutation = useSyncLeadQuoteMutation();
 
-  const finalPrice = variant?.base_price ? Math.round(variant.base_price * 1.12) : 41200;
-  const startPrice = Math.floor((finalPrice - 800) / 100) * 100;
+  const isLaptop = category === 'laptop';
+  
+  // ── Fetch appropriate pricing based on device category ────────────────────
+  const { data: warrantyPrices, isLoading: phoneRulesLoading } = useLiveWarrantyPricesQuery(variant?.id ?? null);
+  const { data: laptopPrices, isLoading: laptopRulesLoading } = useLiveLaptopPricesQuery(variant?.id ?? null);
+  
+  const rulesLoading = isLaptop ? laptopRulesLoading : phoneRulesLoading;
+  const pricingData = isLaptop ? laptopPrices : warrantyPrices;
 
-  const [displayPrice, setDisplayPrice] = useState(startPrice);
+  // ── Calculate final price based on device type ────────────────────────────
+  const finalPrice = useMemo(() => {
+    if (rulesLoading || !pricingData) return 0;
+
+    if (isLaptop) {
+      // Laptop pricing: uses age-based base price + condition deductions
+      const laptopPayload: LaptopConditionData = {
+        ageGroup: conditionData?.deviceAge as 'less_than_1yr' | '1_to_3yrs' | 'more_than_3yrs',
+        overallCondition: conditionData?.overallCondition as 'good' | 'average' | 'below-average',
+        hasCharger: (accessoriesData ?? []).includes('charger'),
+        hasBox: (accessoriesData ?? []).includes('box'),
+        hasBill: (accessoriesData ?? []).includes('bill'),
+      };
+      return calculateLaptopPrice(pricingData as any, laptopPayload);
+    } else {
+      // Phone/iPad pricing: uses warranty_prices with detailed deductions
+      const isAppleDevice = (brandName ?? '').toLowerCase().includes('apple') || (modelName ?? '').toLowerCase().includes('iphone');
+      const payload: ConditionData = {
+        ageGroup: conditionData?.deviceAge,
+        overallCondition: conditionData?.overallCondition,
+        canMakeCalls: questions?.canCall,
+        isTouchWorking: questions?.touchOk,
+        isScreenOriginal: questions?.screenOriginal,
+        isBatteryHealthy: questions?.batteryOk,
+        hasCharger: (accessoriesData ?? []).includes('charger'),
+        hasBox: (accessoriesData ?? []).includes('box'),
+        hasBill: (accessoriesData ?? []).includes('bill'),
+        isAppleDevice,
+      };
+      return calculateFinalPrice(pricingData as any, payload);
+    }
+  }, [rulesLoading, pricingData, isLaptop, conditionData, accessoriesData, questions, brandName, modelName]);
+
+  const startPrice = finalPrice > 0 ? Math.floor((finalPrice - 800) / 100) * 100 : 0;
+
+  const [displayPrice, setDisplayPrice] = useState(0);
   const [priceAnimDone, setPriceAnimDone] = useState(false);
 
   const fade = useRef(new Animated.Value(0)).current;
@@ -24,17 +71,26 @@ const PriceUnlockScreen: React.FC = () => {
   const iconScale = useRef(new Animated.Value(0.8)).current;
   const lockScale = useRef(new Animated.Value(0)).current;
   const buttonFade = useRef(new Animated.Value(0)).current;
-  const priceAnim = useRef(new Animated.Value(startPrice)).current;
+  const priceAnim = useRef(new Animated.Value(0)).current;
+  const syncedLeadRef = useRef(false);
 
   useEffect(() => {
-    // Entry animations
+    // Entry animations (run once on mount)
     Animated.parallel([
       Animated.timing(fade, { toValue: 1, duration: 340, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       Animated.timing(slideY, { toValue: 0, duration: 340, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       Animated.timing(iconScale, { toValue: 1, duration: 360, easing: Easing.out(Easing.back(1.2)), useNativeDriver: true }),
     ]).start();
+  }, [fade, slideY, iconScale]);
 
-    // Price counter animation after short delay
+  useEffect(() => {
+    // Wait for final price to be computed from live DB rules
+    if (rulesLoading || finalPrice === 0) return;
+
+    priceAnim.setValue(startPrice);
+    setDisplayPrice(startPrice);
+    setPriceAnimDone(false);
+
     const listenerId = priceAnim.addListener(({ value }) => {
       setDisplayPrice(Math.round(value));
     });
@@ -49,7 +105,6 @@ const PriceUnlockScreen: React.FC = () => {
         if (finished) {
           setDisplayPrice(finalPrice);
           setPriceAnimDone(true);
-          // Animate lock icon and button in
           Animated.parallel([
             Animated.spring(lockScale, { toValue: 1, useNativeDriver: true, tension: 80, friction: 7 }),
             Animated.timing(buttonFade, { toValue: 1, duration: 400, useNativeDriver: true }),
@@ -63,10 +118,71 @@ const PriceUnlockScreen: React.FC = () => {
       clearTimeout(timer);
       priceAnim.removeListener(listenerId);
     };
-  }, [fade, slideY, iconScale, priceAnim, lockScale, buttonFade, finalPrice]);
+  }, [rulesLoading, finalPrice, startPrice, priceAnim, lockScale, buttonFade]);
+
+  useEffect(() => {
+    // Skip if loading or no price yet
+    if (rulesLoading || finalPrice <= 0 || syncedLeadRef.current) {
+      return;
+    }
+
+    // If user is not authenticated, we cannot create a properly queryable lead
+    // Require authentication before syncing lead
+    if (!user?.phone) {
+      console.log('[PriceUnlock] Cannot sync lead: user not authenticated');
+      return;
+    }
+
+    syncedLeadRef.current = true;
+
+    console.log('[PriceUnlock] Syncing lead - phone:', user.phone, 'leadId:', user.leadId);
+
+    syncLeadQuoteMutation
+      .mutateAsync({
+        leadId: user.leadId,
+        phoneNumber: user.phone,
+        customerName: user.name,
+        city,
+        variantId: variant?.id,
+        deviceId: variant?.device_id,
+        brandName,
+        finalPrice,
+        deviceInterest: variant?.model_name ?? modelName,
+      })
+      .then((result: { updated: boolean; leadId: string | null }) => {
+        console.log('[PriceUnlock] Lead sync result:', result);
+        if (result?.leadId && result.leadId !== user.leadId) {
+          setLeadId(result.leadId);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('[lead-sync] Price unlock quote sync failed:', error);
+        // Allow retry on next render cycle if network failed.
+        syncedLeadRef.current = false;
+      });
+  }, [
+    rulesLoading,
+    finalPrice,
+    user,
+    city,
+    variant?.id,
+    variant?.device_id,
+    variant?.model_name,
+    brandName,
+    modelName,
+    setLeadId,
+    syncLeadQuoteMutation,
+  ]);
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Back Button */}
+      <View style={styles.backHeader}>
+        <Pressable onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Home' }] })} style={styles.backBtn}>
+          <MaterialCommunityIcons name="close" size={22} color="#64748B" />
+        </Pressable>
+      </View>
+
       <Animated.View style={[styles.body, { opacity: fade, transform: [{ translateY: slideY }] }]}>
         <Animated.View style={[styles.successWrap, { transform: [{ scale: iconScale }] }]}>
           <View style={styles.successInner}>
@@ -109,9 +225,13 @@ const PriceUnlockScreen: React.FC = () => {
         </View>
 
         <View style={styles.metaBox}>
-          <Text style={styles.metaText} numberOfLines={1}>
-            Condition: {conditionData?.overallCondition ?? 'good'} | Accessories: {(accessoriesData?.length ?? 0)} selected
-          </Text>
+          {rulesLoading ? (
+            <Text style={styles.metaText}>Fetching live pricing…</Text>
+          ) : (
+            <Text style={styles.metaText} numberOfLines={1}>
+              Variant: {variant?.id?.slice(0, 8) ?? '—'} | Age: {conditionData?.deviceAge ?? '—'} | Condition: {conditionData?.overallCondition ?? '—'} | Accessories: {(accessoriesData?.length ?? 0)} added
+            </Text>
+          )}
         </View>
       </Animated.View>
 
@@ -129,6 +249,7 @@ const PriceUnlockScreen: React.FC = () => {
               finalPrice,
               conditionData,
               accessoriesData,
+              city,
             })
           }
         >
@@ -144,8 +265,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#EFF2F7',
     paddingHorizontal: 20,
-    paddingTop: 18,
     paddingBottom: 18,
+  },
+  backHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   body: {
     flex: 1,

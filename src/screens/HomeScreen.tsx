@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Animated,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,35 +13,37 @@ import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../constants';
 import type { RootStackNavigationProp } from '../navigation/types';
+import { useAuthStore } from '../store';
+import GlobalBottomNav from '../components/GlobalBottomNav';
 
 const whyFeatures = [
   {
     icon: 'lightning-bolt',
     title: 'Quick Evaluation',
     desc: 'Get price in under 60 seconds',
-    tint: '#EAF2FF',
-    iconColor: '#2563EB',
+    tint: '#E9F1FF',
+    iconColor: '#004AAD',
   },
   {
     icon: 'cash-fast',
     title: 'Instant Payment',
     desc: 'Cash or bank transfer instantly',
-    tint: '#F0FDF4',
-    iconColor: '#16A34A',
+    tint: '#FFF1E7',
+    iconColor: '#F97316',
   },
   {
     icon: 'truck-deliver',
     title: 'Free Pickup',
     desc: 'We come to your location',
-    tint: '#FAF5FF',
-    iconColor: '#7C3AED',
+    tint: '#E9F1FF',
+    iconColor: '#004AAD',
   },
   {
     icon: 'shield-star',
     title: 'Best Price',
     desc: 'Highest resale value assured',
-    tint: '#FFFBEB',
-    iconColor: '#D97706',
+    tint: '#FFF1E7',
+    iconColor: '#F97316',
   },
 ];
 
@@ -65,29 +68,14 @@ const sellOptions = [
   },
 ];
 
-const navItems = [
-  { label: 'Home', icon: 'home-variant', iconAlt: 'home-variant-outline' },
-  { label: 'Orders', icon: 'clipboard-text', iconAlt: 'clipboard-text-outline' },
-  { label: 'Profile', icon: 'account-circle', iconAlt: 'account-circle-outline' },
-];
-
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
-  const [activeTab, setActiveTab] = React.useState('Home');
-  const [navWidth, setNavWidth] = React.useState(0);
+  const user = useAuthStore((state) => state.user);
+  const [currentTime, setCurrentTime] = React.useState(() => new Date());
+  const [showLoginModal, setShowLoginModal] = React.useState(false);
 
-  const pillProgress = React.useRef(new Animated.Value(0)).current;
   const bannerFloat = React.useRef(new Animated.Value(0)).current;
-
-  const tabWidth = navWidth > 0 ? navWidth / navItems.length : 0;
-
-  React.useEffect(() => {
-    Animated.timing(pillProgress, {
-      toValue: navItems.findIndex((item) => item.label === activeTab),
-      duration: 260,
-      useNativeDriver: true,
-    }).start();
-  }, [activeTab, pillProgress]);
+  const modalIconPulse = React.useRef(new Animated.Value(0)).current;
 
   React.useEffect(() => {
     const loop = Animated.loop(
@@ -100,23 +88,39 @@ const HomeScreen: React.FC = () => {
     return () => loop.stop();
   }, [bannerFloat]);
 
-  const handleTabPress = (label: string) => {
-    setActiveTab(label);
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
 
-    if (label === 'Home') {
-      navigation.navigate('Home');
-      return;
-    }
+    return () => clearInterval(interval);
+  }, []);
 
-    if (label === 'Orders') {
-      navigation.navigate('Orders');
-      return;
-    }
+  React.useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(modalIconPulse, {
+          toValue: 1,
+          duration: 950,
+          useNativeDriver: true,
+        }),
+        Animated.timing(modalIconPulse, {
+          toValue: 0,
+          duration: 950,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [modalIconPulse]);
 
-    if (label === 'Profile') {
-      navigation.navigate('Profile');
-      return;
-    }
+  const hour = currentTime.getHours();
+  const dayGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const welcomeName = user?.name?.trim() ? user.name.trim() : '';
+
+  const showLoginGate = () => {
+    setShowLoginModal(true);
   };
 
   return (
@@ -124,12 +128,24 @@ const HomeScreen: React.FC = () => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Good afternoon</Text>
-            <Text style={styles.username}>Welcome back</Text>
+            {user ? <Text style={styles.greeting}>{dayGreeting}</Text> : null}
+            <Text style={styles.username}>{user ? `Welcome, ${welcomeName}` : 'Welcome'}</Text>
           </View>
-          <View style={styles.avatar}>
+          <Pressable
+            style={({ pressed }: { pressed: boolean }) => [
+              styles.avatar,
+              pressed && styles.pressDown,
+            ]}
+            onPress={() => {
+              if (!user) {
+                showLoginGate();
+                return;
+              }
+              navigation.navigate('Profile');
+            }}
+          >
             <MaterialCommunityIcons name="account" size={18} color="#0F4FA8" />
-          </View>
+          </Pressable>
         </View>
 
         <View style={styles.banner}>
@@ -208,33 +224,63 @@ const HomeScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomNav} onLayout={(e: any) => setNavWidth(e.nativeEvent.layout.width)}>
-        {tabWidth > 0 ? (
-          <Animated.View
-            style={[
-              styles.activePill,
-              {
-                width: tabWidth - 12,
-                transform: [{ translateX: Animated.multiply(pillProgress, tabWidth) }],
-              },
-            ]}
-          />
-        ) : null}
+      <Modal
+        transparent
+        visible={showLoginModal}
+        animationType="fade"
+        onRequestClose={() => setShowLoginModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Animated.View
+              style={[
+                styles.modalIconWrap,
+                {
+                  transform: [
+                    {
+                      scale: modalIconPulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <MaterialCommunityIcons name="account-lock-outline" size={24} color="#1D4ED8" />
+            </Animated.View>
 
-        {navItems.map((item) => {
-          const active = activeTab === item.label;
-          return (
-            <Pressable key={item.label} style={styles.navItem} onPress={() => handleTabPress(item.label)}>
-              <MaterialCommunityIcons
-                name={active ? item.icon : item.iconAlt}
-                size={20}
-                color={active ? '#0F4FA8' : '#64748B'}
-              />
-              <Text style={[styles.navLabel, active && styles.navLabelActive]}>{item.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+            <Text style={styles.modalTitle}>Login required</Text>
+            <Text style={styles.modalBody}>
+              To view Orders or Profile, continue with OTP. Login and registration happen in one simple step.
+            </Text>
+
+            <View style={styles.modalActions}>
+              <Pressable
+                style={({ pressed }: { pressed: boolean }) => [
+                  styles.modalButtonSecondary,
+                  pressed && styles.pressDown,
+                ]}
+                onPress={() => setShowLoginModal(false)}
+              >
+                <Text style={styles.modalButtonSecondaryText}>Not now</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }: { pressed: boolean }) => [
+                  styles.modalButtonPrimary,
+                  pressed && styles.pressDown,
+                ]}
+                onPress={() => {
+                  setShowLoginModal(false);
+                  navigation.navigate('Auth', undefined);
+                }}
+              >
+                <Text style={styles.modalButtonPrimaryText}>Continue with OTP</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <GlobalBottomNav currentRouteName="Home" />
     </SafeAreaView>
   );
 };
@@ -274,7 +320,7 @@ const styles = StyleSheet.create({
     padding: 18,
     minHeight: 175,
     overflow: 'hidden',
-    backgroundColor: '#255EC6',
+    backgroundColor: COLORS.PRIMARY,
     shadowColor: '#1D4ED8',
     shadowOpacity: 0.2,
     shadowRadius: 18,
@@ -297,7 +343,7 @@ const styles = StyleSheet.create({
     width: 210,
     height: 110,
     borderRadius: 55,
-    backgroundColor: 'rgba(79,70,229,0.26)',
+    backgroundColor: 'rgba(249,115,22,0.22)',
     transform: [{ rotate: '8deg' }],
   },
   bannerTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: '800', width: '72%', lineHeight: 30 },
@@ -337,14 +383,16 @@ const styles = StyleSheet.create({
     marginTop: 10,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: '#D6E4FF',
     backgroundColor: '#FFFFFF',
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.PRIMARY,
     shadowColor: '#0F172A',
-    shadowOpacity: 0.07,
+    shadowOpacity: 0.06,
     shadowRadius: 14,
     elevation: 3,
   },
@@ -353,7 +401,9 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 15,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#E9F1FF',
+    borderWidth: 1,
+    borderColor: '#C9DCFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -363,7 +413,9 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#FFF1E7',
+    borderWidth: 1,
+    borderColor: '#FFD1B1',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -376,10 +428,10 @@ const styles = StyleSheet.create({
   featureCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FBFF',
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: '#D6E4FF',
     padding: 16,
     shadowColor: '#0F172A',
     shadowOpacity: 0.06,
@@ -397,38 +449,79 @@ const styles = StyleSheet.create({
   featureTitle: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
   featureDesc: { fontSize: 12, color: '#6B7280', fontWeight: '500', lineHeight: 17 },
   pressDown: { transform: [{ scale: 0.96 }] },
-  bottomNav: {
-    position: 'absolute',
-    left: 12,
-    right: 12,
-    bottom: 12,
-    height: 72,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.62)',
-    borderWidth: 1,
-    borderColor: 'rgba(226,232,240,0.9)',
-    overflow: 'hidden',
-    flexDirection: 'row',
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15,23,42,0.4)',
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    shadowColor: '#0F172A',
-    shadowOpacity: 0.16,
-    shadowRadius: 22,
-    elevation: 8,
+    padding: 24,
   },
-  activePill: {
-    position: 'absolute',
-    left: 6,
-    top: 6,
-    bottom: 6,
-    borderRadius: 999,
-    backgroundColor: 'rgba(234,242,255,0.95)',
+  modalCard: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(191,219,254,0.8)',
+    borderColor: '#DBEAFE',
+    padding: 18,
   },
-  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4, zIndex: 1 },
-  navLabel: { fontSize: 10, color: '#64748B', fontWeight: '600' },
-  navLabelActive: { color: '#0F4FA8', fontWeight: '800' },
+  modalIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EAF2FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  modalTitle: {
+    marginTop: 12,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalBody: {
+    marginTop: 8,
+    textAlign: 'center',
+    fontSize: 13,
+    lineHeight: 19,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  modalActions: {
+    marginTop: 16,
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalButtonSecondary: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    paddingVertical: 11,
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  modalButtonSecondaryText: {
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  modalButtonPrimary: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 11,
+    alignItems: 'center',
+    backgroundColor: '#1D4ED8',
+  },
+  modalButtonPrimaryText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
 });
 
 export default HomeScreen;

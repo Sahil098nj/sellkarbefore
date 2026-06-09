@@ -13,8 +13,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { COLORS } from '../constants';
 import type { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
-import { useBrandsQuery, Brand } from '../api/productsApi';
-import SkeletonBlock from '../components/SkeletonBlock';
+import { useLiveBrandsQuery, Brand } from '../api/productsApi';
 
 type BrandScreenRouteProp = RouteProp<RootStackParamList, 'Brand'>;
 
@@ -26,7 +25,7 @@ const BrandScreen: React.FC = () => {
   const [search, setSearch] = useState('');
 
   const category = typeof route.params?.category === 'string' ? route.params.category : 'phone';
-  const brandsQuery = useBrandsQuery(category);
+  const brandsQuery = useLiveBrandsQuery(category);
 
   const getBrandIcon = (name: string) => {
     const lower = name.toLowerCase();
@@ -49,12 +48,19 @@ const BrandScreen: React.FC = () => {
     return list.filter((brand) => brand.name.toLowerCase().includes(query));
   }, [brandsQuery.data, search]);
 
+  const listData = useMemo<Array<Brand | null>>(() => {
+    if (brandsQuery.isLoading) {
+      return Array.from({ length: 12 }, () => null);
+    }
+    return filteredBrands;
+  }, [brandsQuery.isLoading, filteredBrands]);
+
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={brandsQuery.isLoading ? Array.from({ length: 12 }) : filteredBrands}
-        keyExtractor={(item: { id?: string }, index: number) => {
-          if (item && typeof item === 'object' && 'id' in item && item.id) {
+        data={listData}
+        keyExtractor={(item: Brand | null, index: number) => {
+          if (item?.id) {
             return item.id;
           }
           return `skeleton-${index}`;
@@ -96,12 +102,12 @@ const BrandScreen: React.FC = () => {
             </View>
           ) : null
         }
-        renderItem={({ item }: { item: Brand }) => {
-          if (brandsQuery.isLoading) {
+        renderItem={({ item }: { item: Brand | null }) => {
+          if (!item) {
             return (
               <View style={styles.card}>
-                <SkeletonBlock width="85%" height={44} borderRadius={10} />
-                <SkeletonBlock width="60%" height={12} style={{ marginTop: 10 }} />
+                <View style={styles.skeletonLogo} />
+                <View style={styles.skeletonText} />
               </View>
             );
           }
@@ -119,7 +125,22 @@ const BrandScreen: React.FC = () => {
               ]}
               onPress={() => {
                 setSelectedBrand(brand);
-                navigation.navigate('ModelVariant', { brandId: brand.id, brandName: brand.name });
+                
+                // Check if this is a non-Apple laptop - use simplified flow
+                const isLaptop = category === 'laptop';
+                const isApple = /apple|macbook|imac|mac/i.test(brand.name);
+                
+                if (isLaptop && !isApple) {
+                  // Non-Apple laptops: Simplified flow - go directly to city selection
+                  navigation.navigate('CitySelection', { 
+                    brandId: brand.id, 
+                    brandName: brand.name,
+                    isSimplifiedLaptop: true 
+                  });
+                } else {
+                  // Apple laptops, all iPads, and phones: Full flow
+                  navigation.navigate('ModelVariant', { brandId: brand.id, brandName: brand.name, category });
+                }
               }}
             >
               {logoUri ? (
@@ -239,6 +260,19 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     marginBottom: 10,
+  },
+  skeletonLogo: {
+    width: '85%',
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#E2E8F0',
+  },
+  skeletonText: {
+    width: '60%',
+    height: 12,
+    borderRadius: 8,
+    backgroundColor: '#E2E8F0',
+    marginTop: 10,
   },
   cardText: {
     fontSize: 12,

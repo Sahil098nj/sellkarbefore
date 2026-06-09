@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useOrderHistoryQuery } from '../api';
+import type { PickupRequest } from '../api';
 import { useAuthStore } from '../store';
 import { COLORS } from '../constants';
 import type { RootStackNavigationProp } from '../navigation/types';
@@ -25,7 +26,7 @@ const OrdersScreen: React.FC = () => {
   const { user } = useAuthStore();
   const ordersQuery = useOrderHistoryQuery(user?.id);
 
-  const orders = ordersQuery.data ?? [];
+  const orders: PickupRequest[] = ordersQuery.data ?? [];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,7 +39,7 @@ const OrdersScreen: React.FC = () => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {orders.map((order) => (
+        {orders.map((order: PickupRequest) => (
           <Pressable
             key={order.id}
             style={({ pressed }: { pressed: boolean }) => [styles.orderCard, pressed && styles.cardPressed]}
